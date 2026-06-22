@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "skills": {
+    "firebase": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "skillPath": "cli-tool/components/skills/development/firebase/SKILL.md",
+      "computedHash": "56d23e93cb77bd3a0d430a33bd2ff1efb9b5b2bfc91ef5734ebd53d0355b78cf"
+    },
+    "pwa-development": {
+      "source": "alinaqi/claude-bootstrap",
+      "sourceType": "github",
+      "skillPath": "skills/pwa-development/SKILL.md",
+      "computedHash": "356d9a26a8435778bb3bb906f5198814c48872ae87485ae97f4da3c10a0cfcc5"
+    },
+    "react-nextjs-development": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/react-nextjs-development/SKILL.md",
+      "computedHash": "f6fccc099580762dc1ffe48d8462c9183f14225a6dd28679cb56a0e5b011669a"
+    },
+    "react-nextjs-patterns": {
+      "source": "duyet/claude-plugins",
+      "sourceType": "github",
+      "skillPath": "team-agents/skills/react-nextjs-patterns/SKILL.md",
+      "computedHash": "fe49d2981c8740eda1e24e18463d259087026812dbbeb6946cbd9b71950c1f59"
+    },
+    "security-best-practices": {
+      "source": "akillness/oh-my-skills",
+      "sourceType": "github",
+      "skillPath": ".agent-skills/security-best-practices/SKILL.md",
+      "computedHash": "5c0a06cd5b5f9943c08ae417925093764714973d5ae3c620488f958890c35bfa"
+    },
+    "typescript-strict": {
+      "source": "omer-metin/skills-for-antigravity",
+      "sourceType": "github",
+      "skillPath": "skills/typescript-strict/SKILL.md",
+      "computedHash": "f23c19fce05ac6e26b47c81c19027bbaa9d3b3879ffb33f28e7acd6144d4c515"
+    },
+    "vercel-react-best-practices": {
+      "source": "andrelandgraf/fullstackrecipes",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/vercel-react-best-practices/SKILL.md",
+      "computedHash": "0407791dc1cc381f8fdc93af69dd90c65ee6b4db659f868255ce0c24bd78c5b6"
+    }
+  }
+}

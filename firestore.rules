@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if the request is authenticated (via our server-side session)
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper: validate a profile document has required fields
+    function isValidProfile() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['name', 'pin', 'avatarType', 'color', 'createdAt'])
+        && data.name is string
+        && data.name.size() <= 50
+        && data.pin is string
+        && data.avatarType in ['male', 'female']
+        && data.color is string
+        && data.color.matches('^#[0-9a-fA-F]{6}$')
+        && request.resource.data.createdAt == request.time;
+    }
+
+    // Helper: validate a record document has required fields
+    function isValidRecord() {
+      let data = request.resource.data;
+      return data.keys().hasAll([
+        'type', 'personName', 'amount', 'currentBalance',
+        'description', 'createdBy', 'createdAt'
+      ])
+        && data.type in ['borrow', 'lend']
+        && data.personName is string
+        && data.personName.size() <= 50
+        && data.amount is number
+        && data.amount > 0
+        && data.amount <= 99999999
+        && data.currentBalance is number
+        && data.description is string
+        && data.description.size() <= 200;
+    }
+
+    // Helper: validate a transaction (audit log) has required fields
+    function isValidTransaction() {
+      let data = request.resource.data;
+      return data.keys().hasAll([
+        'recordId', 'action', 'amount', 'prevBalance',
+        'newBalance', 'editedBy', 'editedByName', 'createdAt'
+      ])
+        && data.action in ['create', 'edit', 'decrease', 'delete']
+        && data.amount is number
+        && request.resource.data.createdAt == request.time;
+    }
+
+    // ── Profiles Collection ──
+    match /profiles/{profileId} {
+      // Authenticated users can read all profiles (needed for profile selection)
+      allow read: if isAuthenticated();
+
+      // Only create if document doesn't exist and data is valid
+      allow create: if isAuthenticated()
+        && !exists(/databases/$(database)/documents/profiles/$(profileId))
+        && isValidProfile();
+
+      // Users can update their own profile (but not PIN through Firestore)
+      allow update: if isAuthenticated()
+        && request.auth.uid == resource.data.deviceId
+        && request.resource.data.name == resource.data.name
+        && request.resource.data.pin == resource.data.pin;
+
+      // No delete (profiles are permanent)
+      allow delete: if false;
+    }
+
+    // ── Records Collection ──
+    match /records/{recordId} {
+      // Authenticated users can read all records
+      allow read: if isAuthenticated();
+
+      // Users can create records if data is valid
+      allow create: if isAuthenticated()
+        && isValidRecord();
+
+      // Users can update records (edit amount, description, etc.)
+      allow update: if isAuthenticated()
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+
+      // Users can't delete records (use soft-delete or decrease instead)
+      allow delete: if false;
+    }
+
+    // ── Transactions Collection (Audit Log) ──
+    match /transactions/{transactionId} {
+      // All authenticated users can read all transactions
+      allow read: if isAuthenticated();
+
+      // Server-only writes (Admin SDK) — no client writes
+      allow create: if isValidTransaction();
+      allow update, delete: if false;
+    }
+  }
+}

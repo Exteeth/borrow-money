@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Borrow Money App — Implementation Plan v2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #f5f5f9;
+      --bg-secondary: #eeeef4;
+      --bg-white: #ffffff;
+      --bg-card: rgba(255, 255, 255, 0.65);
+      --bg-card-hover: rgba(255, 255, 255, 0.85);
+      --bg-card-solid: #ffffff;
+      --text-primary: #1a1a2e;
+      --text-secondary: #5a5a7a;
+      --text-muted: #9a9ab0;
+      --accent-primary: #6c5ce7;
+      --accent-secondary: #0984e3;
+      --accent-green: #00b894;
+      --accent-red: #e17055;
+      --accent-orange: #f39c12;
+      --accent-pink: #e84393;
+      --accent-cyan: #00cec9;
+      --glass-bg: rgba(255, 255, 255, 0.55);
+      --glass-border: rgba(255, 255, 255, 0.7);
+      --glass-shadow: rgba(0, 0, 0, 0.06);
+      --border-light: rgba(0, 0, 0, 0.06);
+      --border-medium: rgba(0, 0, 0, 0.1);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-lg: 24px;
+      --radius-xl: 32px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 30px rgba(0,0,0,0.06);
+      --shadow-lg: 0 16px 60px rgba(0,0,0,0.08);
+      --shadow-xl: 0 24px 80px rgba(0,0,0,0.10);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.7;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Soft Background Shapes ── */
+    .bg-shapes {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+    }
+    .shape {
+      position: absolute; border-radius: 50%; opacity: 0.35;
+      animation: shapeFloat 25s ease-in-out infinite;
+    }
+    .shape-1 { width: 500px; height: 500px; background: rgba(108,92,231,0.12); top: -8%; left: -5%; animation-delay: 0s; filter: blur(80px); }
+    .shape-2 { width: 400px; height: 400px; background: rgba(9,132,227,0.10); top: 35%; right: -8%; animation-delay: -8s; filter: blur(90px); }
+    .shape-3 { width: 450px; height: 450px; background: rgba(0,184,148,0.10); bottom: 5%; left: 15%; animation-delay: -16s; filter: blur(100px); }
+
+    @keyframes shapeFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -20px) scale(1.03); }
+      66% { transform: translate(-15px, 15px) scale(0.97); }
+    }
+
+    /* ── Shared Icon Styles ── */
+    .icon-wrap {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+    .icon-wrap svg { width: 20px; height: 20px; stroke-width: 2; }
+    .icon-wrap-lg { width: 56px; height: 56px; border-radius: var(--radius); }
+    .icon-wrap-lg svg { width: 26px; height: 26px; }
+    .icon-wrap-xl { width: 72px; height: 72px; border-radius: 20px; }
+    .icon-wrap-xl svg { width: 32px; height: 32px; }
+
+    /* ── Layout ── */
+    .container { max-width: 920px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    /* ── Hero ── */
+    .hero { text-align: center; padding: 100px 0 60px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 20px; border-radius: 100px;
+      background: var(--glass-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      font-size: 13px; font-weight: 600; color: var(--accent-primary);
+      margin-bottom: 28px; box-shadow: var(--shadow-sm);
+      animation: fadeInUp 0.6s ease both;
+    }
+    .hero-badge .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 5.5vw, 4rem);
+      font-weight: 900; letter-spacing: -1.5px; line-height: 1.15;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+      animation: fadeInUp 0.6s ease 0.1s both;
+    }
+    .hero h1 .highlight { color: var(--accent-primary); }
+    .hero p {
+      font-size: 17px; color: var(--text-secondary); max-width: 560px; margin: 0 auto 40px;
+      animation: fadeInUp 0.6s ease 0.2s both;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Tech Pills ── */
+    .tech-row {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+      animation: fadeInUp 0.6s ease 0.3s both;
+    }
+    .tech-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 18px; border-radius: 100px;
+      background: var(--glass-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      font-size: 13px; font-weight: 600; color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.25s ease;
+    }
+    .tech-pill:hover {
+      background: var(--bg-card-hover); transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .tech-pill svg { width: 18px; height: 18px; }
+
+    /* ── Section ── */
+    .section { padding: 70px 0 30px; }
+    .section-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2.5px;
+      color: var(--accent-primary); margin-bottom: 10px;
+    }
+    .section-label svg { width: 16px; height: 16px; }
+    .section-title {
+      font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+      font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+    .section-desc {
+      font-size: 15px; color: var(--text-secondary); max-width: 560px; margin-bottom: 36px;
+    }
+
+    /* ── Glass Card (shared) ── */
+    .glass {
+      background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+      transition: all 0.3s ease;
+    }
+    .glass:hover {
+      background: var(--bg-card-hover);
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* ── Context Box (user info) ── */
+    .context-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 36px; }
+    .context-card {
+      padding: 20px 22px; border-radius: var(--radius); display: flex; align-items: center; gap: 14px;
+      background: var(--glass-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border); box-shadow: var(--shadow-sm);
+    }
+    .context-card .icon-wrap { flex-shrink: 0; }
+    .context-card .label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .context-card .value { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-top: 2px; }
+
+    /* ── Alert Boxes ── */
+    .alert {
+      padding: 20px 22px; border-radius: var(--radius); margin-bottom: 14px;
+      border-left: 4px solid; display: flex; gap: 14px; align-items: flex-start;
+      background: var(--glass-bg); backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-sm);
+    }
+    .alert .icon-wrap { flex-shrink: 0; }
+    .alert-body h4 { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+    .alert-body p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+    .alert-warning { border-color: var(--accent-orange); }
+    .alert-warning h4 { color: #c87f0a; }
+    .alert-info { border-color: var(--accent-secondary); }
+    .alert-info h4 { color: var(--accent-secondary); }
+    .alert-danger { border-color: var(--accent-red); }
+    .alert-danger h4 { color: #c0392b; }
+    .alert-success { border-color: var(--accent-green); }
+    .alert-success h4 { color: #00896e; }
+
+    /* ── Table ── */
+    .info-table {
+      width: 100%; border-collapse: separate; border-spacing: 0;
+      border-radius: var(--radius-lg); overflow: hidden;
+      background: var(--glass-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border); box-shadow: var(--shadow-md);
+    }
+    .info-table th {
+      text-align: left; padding: 14px 22px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted);
+      background: rgba(0,0,0,0.02); border-bottom: 1px solid var(--border-light);
+    }
+    .info-table td {
+      padding: 14px 22px; font-size: 14px; border-bottom: 1px solid var(--border-light);
+      color: var(--text-secondary);
+    }
+    .info-table td strong { color: var(--text-primary); }
+    .info-table tr:last-child td { border-bottom: none; }
+    .info-table tr:hover td { background: rgba(108,92,231,0.03); }
+    .info-table code {
+      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+      padding: 2px 8px; border-radius: 6px; background: rgba(108,92,231,0.08);
+      color: var(--accent-primary);
+    }
+
+    /* ── Architecture ── */
+    .arch-container {
+      padding: 40px; border-radius: var(--radius-xl);
+      background: var(--glass-bg); backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border); box-shadow: var(--shadow-lg);
+      margin-bottom: 36px;
+    }
+    .arch-flow {
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 28px; align-items: center;
+    }
+    .arch-box {
+      background: rgba(255,255,255,0.6); border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow-sm);
+    }
+    .arch-box h3 {
+      font-size: 15px; font-weight: 700; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .arch-box h3 svg { width: 20px; height: 20px; color: var(--accent-primary); }
+    .arch-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: var(--radius-sm);
+      background: rgba(0,0,0,0.02); margin-bottom: 8px;
+      font-size: 13px; font-weight: 500; color: var(--text-secondary);
+    }
+    .arch-item:last-child { margin-bottom: 0; }
+    .arch-item .dot-c { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .arch-arrow { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--text-muted); }
+    .arch-arrow svg { width: 32px; height: 32px; }
+    .arch-arrow span { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+    @media (max-width: 700px) {
+      .arch-flow { grid-template-columns: 1fr; }
+      .arch-arrow { transform: rotate(90deg); margin: 8px 0; }
+    }
+
+    /* ── Data Model Cards ── */
+    .model-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+    .model-card {
+      border-radius: var(--radius-lg); overflow: hidden;
+      background: var(--glass-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border); box-shadow: var(--shadow-md);
+      transition: all 0.3s ease;
+    }
+    .model-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-xl); }
+    .model-header {
+      padding: 20px 22px 14px; border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .model-header h3 { font-size: 15px; font-weight: 700; }
+    .model-header span { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    .model-body { padding: 14px 22px 22px; }
+    .model-field {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 7px 0; border-bottom: 1px solid var(--border-light); font-size: 13px;
+    }
+    .model-field:last-child { border-bottom: none; }
+    .field-name { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent-primary); font-weight: 500; }
+    .field-type {
+      font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;
+      padding: 2px 10px; background: rgba(0,0,0,0.03); border-radius: 100px;
+    }
+
+    /* ── Page Cards ── */
+    .page-list { display: grid; gap: 18px; }
+    .page-card {
+      padding: 28px; border-radius: var(--radius-lg);
+      background: var(--glass-bg); backdrop-filter: blur(14px);
+      border: 1px solid var(--glass-border); box-shadow: var(--shadow-md);
+      display: grid; grid-template-columns: auto 1fr; gap: 22px;
+      transition: all 0.3s ease; position: relative; overflow: hidden;
+    }
+    .page-card::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+      border-radius: 0 3px 3px 0; opacity: 0; transition: opacity 0.3s ease;
+    }
+    .page-card:hover {
+      background: var(--bg-card-hover); transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+    .page-card:hover::before { opacity: 1; }
+    .page-card:nth-child(1)::before { background: var(--accent-primary); }
+    .page-card:nth-child(2)::before { background: var(--accent-green); }
+    .page-card:nth-child(3)::before { background: var(--accent-pink); }
+    .page-card:nth-child(4)::before { background: var(--accent-orange); }
+    .page-card:nth-child(5)::before { background: var(--accent-secondary); }
+
+    .page-content h3 { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
+    .page-content .page-route {
+      font-size: 12px; font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted); margin-bottom: 10px;
+    }
+    .page-content p { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.7; }
+
+    .feature-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .feature-tag {
+      padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 600;
+      background: rgba(108,92,231,0.07); color: var(--accent-primary);
+      border: 1px solid rgba(108,92,231,0.12);
+    }
+
+    @media (max-width: 600px) { .page-card { grid-template-columns: 1fr; } }
+
+    /* ── Security Section ── */
+    .security-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .security-card {
+      padding: 24px; border-radius: var(--radius-lg);
+      background: var(--glass-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border); box-shadow: var(--shadow-md);
+      transition: all 0.3s ease;
+    }
+    .security-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+    .security-card h4 {
+      font-size: 14px; font-weight: 700; margin: 14px 0 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .security-list { list-style: none; }
+    .security-list li {
+      padding: 6px 0; font-size: 13px; color: var(--text-secondary);
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .security-list li svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; color: var(--accent-green); }
+
+    /* ── File Tree ── */
+    .file-tree-container {
+      border-radius: var(--radius-xl); overflow: hidden;
+      background: var(--bg-card-solid); border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-lg);
+    }
+    .file-tree-header {
+      padding: 14px 22px; border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.02);
+    }
+    .file-tree-header .dots { display: flex; gap: 6px; }
+    .file-tree-header .dots span { width: 12px; height: 12px; border-radius: 50%; }
+    .file-tree-header .dots span:nth-child(1) { background: #ff5f57; }
+    .file-tree-header .dots span:nth-child(2) { background: #febc2e; }
+    .file-tree-header .dots span:nth-child(3) { background: #28c840; }
+    .file-tree-header .title { font-size: 13px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    .file-tree {
+      padding: 24px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      line-height: 2; color: var(--text-secondary); overflow-x: auto;
+    }
+    .file-tree .folder { color: var(--accent-secondary); font-weight: 600; }
+    .file-tree .file-ts { color: var(--accent-primary); }
+    .file-tree .file-css { color: var(--accent-pink); }
+    .file-tree .file-json { color: var(--accent-orange); }
+    .file-tree .comment { color: var(--text-muted); font-style: italic; font-size: 11px; }
+
+    /* ── Timeline ── */
+    .timeline { position: relative; padding-left: 44px; }
+    .timeline::before {
+      content: ''; position: absolute; left: 16px; top: 8px; bottom: 8px;
+      width: 2px; background: var(--border-medium); border-radius: 2px;
+    }
+    .timeline-item { position: relative; margin-bottom: 24px; }
+    .timeline-dot {
+      position: absolute; left: -36px; top: 8px;
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 3px solid var(--bg-primary); z-index: 1;
+      box-shadow: 0 0 0 2px var(--border-light);
+    }
+    .timeline-card {
+      padding: 22px; border-radius: var(--radius);
+      background: var(--glass-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border); box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+    }
+    .timeline-card:hover { background: var(--bg-card-hover); transform: translateX(4px); box-shadow: var(--shadow-md); }
+    .timeline-card h4 {
+      font-size: 15px; font-weight: 700; margin-bottom: 4px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .phase-badge {
+      font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 100px;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .timeline-card p { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+    .time-est {
+      font-size: 12px; color: var(--text-muted); font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .time-est svg { width: 14px; height: 14px; }
+
+    /* ── Verify Grid ── */
+    .verify-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; }
+    .verify-card {
+      padding: 22px; border-radius: var(--radius-lg);
+      background: var(--glass-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border); box-shadow: var(--shadow-sm);
+    }
+    .verify-card h4 {
+      font-size: 14px; font-weight: 700; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .verify-card h4 svg { width: 18px; height: 18px; color: var(--accent-primary); }
+    .verify-list { list-style: none; }
+    .verify-list li {
+      padding: 6px 0; font-size: 13px; color: var(--text-secondary);
+      display: flex; align-items: flex-start; gap: 8px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .verify-list li:last-child { border-bottom: none; }
+    .verify-list svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; color: var(--accent-green); }
+
+    /* ── UX Principles ── */
+    .ux-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .ux-card {
+      padding: 28px 22px; text-align: center; border-radius: var(--radius-lg);
+      background: var(--glass-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border); box-shadow: var(--shadow-md);
+      transition: all 0.3s ease;
+    }
+    .ux-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .ux-card .icon-wrap-xl { margin: 0 auto 16px; }
+    .ux-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .ux-card p { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* ── Color Palette ── */
+    .color-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+    .color-swatch {
+      flex: 1; min-width: 90px; padding: 22px 14px 14px;
+      border-radius: var(--radius-sm); text-align: center;
+      transition: transform 0.3s ease; box-shadow: var(--shadow-sm);
+    }
+    .color-swatch:hover { transform: scale(1.05); }
+    .color-swatch .swatch-name { font-size: 11px; font-weight: 700; margin-bottom: 3px; }
+    .color-swatch .swatch-hex { font-size: 10px; font-family: 'JetBrains Mono', monospace; opacity: 0.7; }
+
+    /* ── Nav Preview ── */
+    .nav-preview {
+      max-width: 380px; margin: 0 auto; padding: 8px 0 0;
+      background: var(--bg-card-solid); border-radius: var(--radius-xl);
+      border: 1px solid var(--border-light); box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+    .nav-phone-bar {
+      height: 200px; display: flex; align-items: center; justify-content: center;
+      background: var(--bg-primary); margin: 0 8px; border-radius: var(--radius) var(--radius) 0 0;
+      border: 1px solid var(--border-light); border-bottom: none;
+    }
+    .nav-circle-preview {
+      width: 120px; height: 120px; border-radius: 50%;
+      border: 6px solid rgba(108,92,231,0.15);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+    }
+    .nav-circle-preview .amount { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+    .nav-circle-preview .label-small { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+    .nav-bar {
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 12px 8px 16px; border-top: 1px solid var(--border-light);
+      background: rgba(255,255,255,0.8); backdrop-filter: blur(12px);
+    }
+    .nav-item { text-align: center; cursor: pointer; }
+    .nav-item svg { width: 22px; height: 22px; color: var(--text-muted); margin-bottom: 2px; }
+    .nav-item.active svg { color: var(--accent-primary); }
+    .nav-item span { font-size: 10px; font-weight: 600; color: var(--text-muted); display: block; }
+    .nav-item.active span { color: var(--accent-primary); }
+    .nav-fab {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--accent-primary); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: -24px; box-shadow: 0 6px 20px rgba(108,92,231,0.35);
+      transition: transform 0.2s ease;
+    }
+    .nav-fab:hover { transform: scale(1.1); }
+    .nav-fab svg { width: 24px; height: 24px; }
+
+    /* ── Sticky TOC ── */
+    .toc {
+      position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+      z-index: 100; display: flex; flex-direction: column; gap: 4px;
+    }
+    .toc a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 12px; border-radius: 10px;
+      font-size: 11px; font-weight: 600; color: var(--text-muted);
+      text-decoration: none; transition: all 0.25s ease;
+      background: rgba(255,255,255,0.7); backdrop-filter: blur(12px);
+      border: 1px solid transparent; white-space: nowrap;
+    }
+    .toc a .toc-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--text-muted); flex-shrink: 0; transition: all 0.25s ease;
+    }
+    .toc a .toc-label { opacity: 0; max-width: 0; overflow: hidden; transition: all 0.3s ease; }
+    .toc:hover a .toc-label { opacity: 1; max-width: 200px; }
+    .toc a:hover {
+      color: var(--text-primary); border-color: var(--border-light);
+      box-shadow: var(--shadow-sm);
+    }
+    .toc a:hover .toc-dot { background: var(--accent-primary); transform: scale(1.3); }
+    .toc a.active .toc-dot { background: var(--accent-primary); }
+    @media (max-width: 1100px) { .toc { display: none; } }
+
+    /* ── Total Time ── */
+    .total-time {
+      text-align: center; padding: 28px;
+      background: var(--glass-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md); margin-top: 16px;
+    }
+    .total-time .label { font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+    .total-time .big { font-size: 36px; font-weight: 900; color: var(--accent-primary); }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center; padding: 50px 0; color: var(--text-muted);
+      font-size: 13px; border-top: 1px solid var(--border-light); margin-top: 70px;
+    }
+
+    /* ── Scroll Animations ── */
+    .fade-in {
+      opacity: 0; transform: translateY(28px);
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+    .divider { height: 1px; background: var(--border-light); margin: 36px 0; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .container { padding: 0 16px; }
+      .hero { padding: 60px 0 40px; }
+      .section { padding: 50px 0 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Background shapes -->
+<div class="bg-shapes">
+  <div class="shape shape-1"></div>
+  <div class="shape shape-2"></div>
+  <div class="shape shape-3"></div>
+</div>
+
+<!-- TOC -->
+<nav class="toc" id="toc">
+  <a href="#hero"><span class="toc-dot"></span><span class="toc-label">Overview</span></a>
+  <a href="#context"><span class="toc-dot"></span><span class="toc-label">Context</span></a>
+  <a href="#warnings"><span class="toc-dot"></span><span class="toc-label">Notices</span></a>
+  <a href="#tech"><span class="toc-dot"></span><span class="toc-label">Tech Stack</span></a>
+  <a href="#security"><span class="toc-dot"></span><span class="toc-label">Security</span></a>
+  <a href="#architecture"><span class="toc-dot"></span><span class="toc-label">Architecture</span></a>
+  <a href="#data"><span class="toc-dot"></span><span class="toc-label">Data Models</span></a>
+  <a href="#pages"><span class="toc-dot"></span><span class="toc-label">Pages</span></a>
+  <a href="#ux"><span class="toc-dot"></span><span class="toc-label">UX / UI</span></a>
+  <a href="#design"><span class="toc-dot"></span><span class="toc-label">Design</span></a>
+  <a href="#files"><span class="toc-dot"></span><span class="toc-label">Files</span></a>
+  <a href="#timeline"><span class="toc-dot"></span><span class="toc-label">Timeline</span></a>
+  <a href="#verify"><span class="toc-dot"></span><span class="toc-label">Verification</span></a>
+</nav>
+
+<div class="container">
+
+  <!-- ═══════ HERO ═══════ -->
+  <section class="hero" id="hero">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      Implementation Plan v2.0
+    </div>
+    <h1>Borrow <span class="highlight">Money</span><br/>Web App</h1>
+    <p>A multi-device PWA for Num & Kaew to track borrowed and lent money — with real-time sync, audit trails, and bill photo references.</p>
+    <div class="tech-row">
+      <span class="tech-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Next.js 15
+      </span>
+      <span class="tech-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a10 10 0 0 1 0 20 10 10 0 0 1 0-20z"/><path d="M12 6v6l4 2"/></svg>
+        Firebase
+      </span>
+      <span class="tech-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+        PWA
+      </span>
+      <span class="tech-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/></svg>
+        Vercel
+      </span>
+      <span class="tech-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        TypeScript
+      </span>
+    </div>
+  </section>
+
+  <!-- ═══════ CONFIRMED CONTEXT ═══════ -->
+  <section class="section fade-in" id="context">
+    <div class="section-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      Confirmed Details
+    </div>
+    <h2 class="section-title">Project Context</h2>
+    <p class="section-desc">Answers confirmed — these shape every decision below.</p>
+
+    <div class="context-grid">
+      <div class="context-card">
+        <div class="icon-wrap" style="background:rgba(108,92,231,0.1); color:var(--accent-primary);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <div class="label">Users</div>
+          <div class="value">Num & Kaew</div>
+        </div>
+      </div>
+      <div class="context-card">
+        <div class="icon-wrap" style="background:rgba(0,184,148,0.1); color:var(--accent-green);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div>
+          <div class="label">Currency</div>
+          <div class="value">Thai Baht (฿)</div>
+        </div>
+      </div>
+      <div class="context-card">
+        <div class="icon-wrap" style="background:rgba(9,132,227,0.1); color:var(--accent-secondary);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg>
+        </div>
+        <div>
+          <div class="label">Sync</div>
+          <div class="value">Multi-Device</div>
+        </div>
+      </div>
+      <div class="context-card">
+        <div class="icon-wrap" style="background:rgba(232,67,147,0.1); color:var(--accent-pink);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <div>
+          <div class="label">Bill Photos</div>
+          <div class="value">Reference Only</div>
+        </div>
+      </div>
+      <div class="context-card">
+        <div class="icon-wrap" style="background:rgba(225,112,85,0.1); color:var(--accent-red);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div>
+          <div class="label">Decrease</div>
+          <div class="value">Partial Repayment</div>
+        </div>
+      </div>
+      <div class="context-card">
+        <div class="icon-wrap" style="background:rgba(243,156,18,0.1); color:var(--accent-orange);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div>
+          <div class="label">Theme</div>
+          <div class="value">Light + Glass</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ WARNINGS ═══════ -->
+  <section class="section fade-in" id="warnings">
+    <div class="section-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Important Notices
+    </div>
+    <h2 class="section-title">Before We Start</h2>
+    <p class="section-desc">Critical items that affect setup and deployment.</p>
+
+    <div class="alert alert-success">
+      <div class="icon-wrap" style="background:rgba(0,184,148,0.1); color:var(--accent-green);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="alert-body">
+        <h4>100% Spark Free Plan (No Credit Card Required)</h4>
+        <p>By storing bill photos as compressed Base64 strings in Firestore and using pre-set vector male/female avatars, we avoid using Firebase Storage entirely. This keeps the app completely free and runs on the Spark tier.</p>
+      </div>
+    </div>
+
+    <div class="alert alert-info">
+      <div class="icon-wrap" style="background:rgba(9,132,227,0.1); color:var(--accent-secondary);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/></svg>
+      </div>
+      <div class="alert-body">
+        <h4>Vercel Hobby Plan — Non-Commercial Only</h4>
+        <p>The free Vercel plan is for personal projects. If this becomes commercial, you'll need Vercel Pro ($20/mo). For a personal tracking app between two people, Hobby is perfect.</p>
+      </div>
+    </div>
+
+    <div class="alert alert-success">
+      <div class="icon-wrap" style="background:rgba(0,184,148,0.1); color:var(--accent-green);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg>
+      </div>
+      <div class="alert-body">
+        <h4>Real-Time Multi-Device Sync</h4>
+        <p>Using Firestore's <strong>onSnapshot</strong> listeners, changes made on Num's phone will instantly appear on Kaew's device (and vice versa). No manual refresh needed.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ TECH STACK ═══════ -->
+  <section class="section fade-in" id="tech">
+    <div class="section-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      Stack
+    </div>
+    <h2 class="section-title">Technology Choices</h2>
+    <p class="section-desc">Every layer of the app and why it was chosen.</p>
+
+    <table class="info-table">
+      <thead><tr><th>Layer</th><th>Technology</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Framework</strong></td><td>Next.js 15 (App Router)</td><td>TypeScript, React 19, SSR + CSR</td></tr>
+        <tr><td><strong>PWA</strong></td><td>Manual manifest + Service Worker</td><td>Installable, offline-capable</td></tr>
+        <tr><td><strong>Styling</strong></td><td>Vanilla CSS + CSS Modules</td><td>Light theme, glassmorphism, no gradients</td></tr>
+        <tr><td><strong>Auth</strong></td><td>Firebase Auth (Anonymous) + Profiles</td><td>PIN-based, <code>httpOnly</code> session cookies</td></tr>
+        <tr><td><strong>Database</strong></td><td>Cloud Firestore</td><td>Real-time sync via <code>onSnapshot</code></td></tr>
+        <tr><td><strong>Storage</strong></td><td>Firestore (Base64)</td><td>Bill photos compressed client-side (~60KB)</td></tr>
+        <tr><td><strong>Deploy</strong></td><td>Vercel Hobby</td><td>100 GB bandwidth/mo, auto-deploys</td></tr>
+        <tr><td><strong>Icons</strong></td><td>Lucide Icons (SVG)</td><td>Clean, consistent, 1000+ icons</td></tr>
+        <tr><td><strong>Fonts</strong></td><td>Inter + Prompt (Thai)</td><td>Google Fonts, variable weight</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════ SECURITY ═══════ -->
+  <section class="section fade-in" id="security">
+    <div class="section-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Security
+    </div>
+    <h2 class="section-title">Security Architecture</h2>
+    <p class="section-desc">Every layer hardened — from cookies to Firestore rules.</p>
+
+    <div class="security-grid">
+
+      <div class="security-card">
+        <div class="icon-wrap icon-wrap-lg" style="background:rgba(108,92,231,0.08); color:var(--accent-primary);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h4>Authentication</h4>
+        <ul class="security-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Firebase Anonymous Auth per device</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> PIN hashed with <code>bcryptjs</code> (salt rounds: 10)</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Max 5 PIN attempts, then 30s lockout</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Auto-logout after 7 days of inactivity</li>
+        </ul>
+      </div>
+
+      <div class="security-card">
+        <div class="icon-wrap icon-wrap-lg" style="background:rgba(0,184,148,0.08); color:var(--accent-green);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h4>Session Cookies</h4>
+        <ul class="security-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> <code>httpOnly</code> — can't be read by JavaScript</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> <code>secure</code> — HTTPS only in production</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> <code>sameSite: lax</code> — CSRF protection</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Server-side verification on every request</li>
+        </ul>
+      </div>
+
+      <div class="security-card">
+        <div class="icon-wrap icon-wrap-lg" style="background:rgba(9,132,227,0.08); color:var(--accent-secondary);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
+        <h4>Firestore Rules</h4>
+        <ul class="security-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Authenticated users only (no public reads)</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Write validation: required fields check</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> User can only modify own device data</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Server-side <code>createdAt</code> timestamps only</li>
+        </ul>
+      </div>
+
+      <div class="security-card">
+        <div class="icon-wrap icon-wrap-lg" style="background:rgba(232,67,147,0.08); color:var(--accent-pink);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <h4>Image Handling</h4>
+        <ul class="security-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Client-side canvas compression to &lt; 80KB</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Encoded as Base64 JPEG strings</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Stored directly in Firestore document</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Validated on client side: type and size</li>
+        </ul>
+      </div>
+
+      <div class="security-card">
+        <div class="icon-wrap icon-wrap-lg" style="background:rgba(243,156,18,0.08); color:var(--accent-orange);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <h4>Data Privacy</h4>
+        <ul class="security-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> No personal data sent to 3rd parties</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> PIN never stored in plain text</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Firebase environment keys in <code>.env.local</code></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Admin SDK on server only (never in client bundle)</li>
+        </ul>
+      </div>
+
+      <div class="security-card">
+        <div class="icon-wrap icon-wrap-lg" style="background:rgba(225,112,85,0.08); color:var(--accent-red);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <h4>Input Validation</h4>
+        <ul class="security-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> All amounts validated (positive numbers only)</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> XSS prevention: sanitized text inputs</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Decrease can't exceed current balance</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Server-side validation in API routes</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════ ARCHITECTURE ═══════ -->
+  <section class="section fade-in" id="architecture">
+    <div class="section-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
+      Architecture
+    </div>
+    <h2 class="section-title">System Overview</h2>
+    <p class="section-desc">How the client and Firebase backend connect — with real-time sync.</p>
+
+    <div class="arch-container">
+      <div class="arch-flow">
+        <div class="arch-box">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+            Next.js PWA (Vercel)
+          </h3>
+          <div class="arch-item"><span class="dot-c" style="background:var(--accent-primary)"></span> Login / Profile Select</div>
+          <div class="arch-item"><span class="dot-c" style="background:var(--accent-green)"></span> Main Dashboard (Circle)</div>
+          <div class="arch-item"><span class="dot-c" style="background:var(--accent-pink)"></span> Profile Management</div>
+          <div class="arch-item"><span class="dot-c" style="background:var(--accent-orange)"></span> Transaction History</div>
+          <div class="arch-item"><span class="dot-c" style="background:var(--accent-secondary)"></span> Add / Edit / Decrease</div>
+        </div>
+
+        <div class="arch-arrow">
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 20h24M26 14l6 6-6 6"/></svg>
+          <span>Real-time</span>
+          <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M32 20H8M14 14l-6 6 6 6"/></svg>
+        </div>
+
+        <div class="arch-box">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a10 10 0 0 1 0 20 10 10 0 0 1 0-20z"/><path d="M12 6v6l4 2"/></svg>
+            Firebase Backend
+          </h3>
+          <div class="arch-item"><span class="dot-c" style="background:var(--accent-orange)"></span> Firestore (real-time DB)</div>
+          <div class="arch-item"><span class="dot-c" style="background:var(--accent-red)"></span> Auth (Anonymous + Sessions)</div>
+          <div class="arch-item"><span class="dot-c" style="background:var(--accent-cyan)"></span> Firestore (Base64 photos)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ DATA MODELS ═══════ -->
+  <section class="section fade-in" id="data">
+    <div class="section-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      Database
+    </div>
+    <h2 class="section-title">Firestore Data Models</h2>
+    <p class="section-desc">Three collections that power the entire app — synced in real-time.</p>
+
+    <div class="model-grid">
+      <div class="model-card">
+        <div class="model-header">
+          <div class="icon-wrap" style="background:rgba(108,92,231,0.1); color:var(--accent-primary);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div><h3>profiles</h3><span>Collection</span></div>
+        </div>
+        <div class="model-body">
+          <div class="model-field"><span class="field-name">id</span><span class="field-type">string</span></div>
+          <div class="model-field"><span class="field-name">name</span><span class="field-type">string</span></div>
+          <div class="model-field"><span class="field-name">pin</span><span class="field-type">string (bcrypt)</span></div>
+          <div class="model-field"><span class="field-name">avatarType</span><span class="field-type">'male' | 'female'</span></div>
+          <div class="model-field"><span class="field-name">color</span><span class="field-type">string</span></div>
+          <div class="model-field"><span class="field-name">deviceId</span><span class="field-type">string</span></div>
+          <div class="model-field"><span class="field-name">createdAt</span><span class="field-type">Timestamp</span></div>
+        </div>
+      </div>
+
+      <div class="model-card">
+        <div class="model-header">
+          <div class="icon-wrap" style="background:rgba(0,184,148,0.1); color:var(--accent-green);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div><h3>records</h3><span>Collection</span></div>
+        </div>
+        <div class="model-body">
+          <div class="model-field"><span class="field-name">id</span><span class="field-type">string</span></div>
+          <div class="model-field"><span class="field-name">type</span><span class="field-type">'borrow' | 'lend'</span></div>
+          <div class="model-field"><span class="field-name">personName</span><span class="field-type">string</span></div>
+          <div class="model-field"><span class="field-name">amount</span><span class="field-type">number (฿)</span></div>
+          <div class="model-field"><span class="field-name">currentBalance</span><span class="field-type">number (฿)</span></div>
+          <div class="model-field"><span class="field-name">description</span><span class="field-type">string</span></div>
+          <div class="model-field"><span class="field-name">billImageBase64</span><span class="field-type">string?</span></div>
+          <div class="model-field"><span class="field-name">createdBy</span><span class="field-type">profileId</span></div>
+          <div class="model-field"><span class="field-name">createdAt</span><span class="field-type">Timestamp</span></div>
+        </div>
+      </div>
+
+      <div class="model-card">
+        <div class="model-header">
+          <div class="icon-wrap" style="background:rgba(225,112,85,0.1); color:var(--accent-red);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div><h3>transactions</h3><span>Audit Log</span></div>
+        </div>
+        <div class="model-body">
+          <div class="model-field"><span class="field-name">id</span><span class="field-type">string</span></div>
+          <div class="model-field"><span class="field-name">recordId</span><span class="field-type">string</span></div>
+          <div class="model-field"><span class="field-name">action</span><span class="field-type">enum</span></div>
+          <div class="model-field"><span class="field-name">amount</span><span class="field-type">number (฿)</span></div>
+          <div class="model-field"><span class="field-name">prevBalance</span><span class="field-type">number (฿)</span></div>
+          <div class="model-field"><span class="field-name">newBalance</span><span class="field-type">number (฿)</span></div>
+          <div class="model-field"><span class="field-name">editedBy</span><span class="field-type">profileId</span></div>
+          <div class="model-field"><span class="field-name">editedByName</span><span class="field-type">string</span></div>
+          <div class="model-field"><span class="field-name">note</span><span class="field-type">string</span></div>
+          <div class="model-field"><span class="field-name">createdAt</span><span class="field-type">Timestamp</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ PAGES ═══════ -->
+  <section class="section fade-in" id="pages">
+    <div class="section-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Pages
+    </div>
+    <h2 class="section-title">App Screens</h2>
+    <p class="section-desc">Every page with routing, features, and UX details.</p>
+
+    <div class="page-list">
+
+      <div class="page-card">
+        <div class="icon-wrap icon-wrap-xl" style="background:rgba(108,92,231,0.08); color:var(--accent-primary);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div class="page-content">
+          <h3>Login Page</h3>
+          <div class="page-route">/login</div>
+          <p>Profile selection showing Num & Kaew (and any future profiles) as avatar cards. Tap a profile to reveal an animated PIN keypad. Handles wrong PIN with shake animation and lockout after 5 attempts. Cookie set on success for 7-day persistence. "Create New Profile" option at bottom.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Profile Cards</span>
+            <span class="feature-tag">PIN Keypad</span>
+            <span class="feature-tag">Cookie Session</span>
+            <span class="feature-tag">Lockout Protection</span>
+            <span class="feature-tag">Create Profile</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-card">
+        <div class="icon-wrap icon-wrap-xl" style="background:rgba(0,184,148,0.08); color:var(--accent-green);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div class="page-content">
+          <h3>Main Dashboard</h3>
+          <div class="page-route">/ (home)</div>
+          <p><strong>Big animated circle</strong> at center showing total balance in ฿. Ring color changes: green when people owe you, red when you owe. SVG stroke animation with counting number effect. Below: two large tactile buttons — "Add" and "Paid Back". Recent activity feed (last 5 entries) with real-time updates via Firestore <code>onSnapshot</code>.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Balance Circle (SVG)</span>
+            <span class="feature-tag">Real-time Sync</span>
+            <span class="feature-tag">Quick Add</span>
+            <span class="feature-tag">Quick Paid Back</span>
+            <span class="feature-tag">Activity Feed</span>
+            <span class="feature-tag">Counter Animation</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-card">
+        <div class="icon-wrap icon-wrap-xl" style="background:rgba(232,67,147,0.08); color:var(--accent-pink);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="page-content">
+          <h3>Profile Page</h3>
+          <div class="page-route">/profile</div>
+          <p>Shows who is currently logged in (Num or Kaew). Large avatar card with stats (total lent, total borrowed, net balance). Switch between profiles. Edit: change name, select avatar (Male / Female outline icon), pick accent color. All profiles listed with switch option.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Profile Card</span>
+            <span class="feature-tag">Avatar Selector (M/F)</span>
+            <span class="feature-tag">Color Picker</span>
+            <span class="feature-tag">Switch User</span>
+            <span class="feature-tag">Personal Stats</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-card">
+        <div class="icon-wrap icon-wrap-xl" style="background:rgba(243,156,18,0.08); color:var(--accent-orange);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="page-content">
+          <h3>Transaction History</h3>
+          <div class="page-route">/transactions</div>
+          <p>Full audit log — shows <strong>who</strong> did <strong>what</strong>, <strong>how much</strong>, and <strong>when</strong>. Every add, edit, and payback is logged with the profile name of who made the change. Filter by person, action type, or date range. Color-coded: green for paybacks, red for new borrows. Expandable cards show edit history and bill photo thumbnails.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Audit Trail</span>
+            <span class="feature-tag">Who Edited</span>
+            <span class="feature-tag">Filters</span>
+            <span class="feature-tag">Color Coded</span>
+            <span class="feature-tag">Bill Thumbnails</span>
+            <span class="feature-tag">Date Range</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-card">
+        <div class="icon-wrap icon-wrap-xl" style="background:rgba(9,132,227,0.08); color:var(--accent-secondary);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <div class="page-content">
+          <h3>Add / Edit / Decrease</h3>
+          <div class="page-route">/records/new · /records/[id]/edit · /records/[id]/decrease</div>
+          <p><strong>Add:</strong> Person name, amount (฿), type (borrow/lend), note. Optional bill photo (compressed to Base64). <strong>Edit:</strong> Modify description or amount — logged in audit trail. <strong>Decrease (Paid Back):</strong> Enter repayment amount with real-time balance preview. Can't exceed current balance. Animated progress bar shows remaining debt.</p>
+          <div class="feature-tags">
+            <span class="feature-tag">Add Record</span>
+            <span class="feature-tag">Edit with Audit</span>
+            <span class="feature-tag">Paid Back</span>
+            <span class="feature-tag">Bill Photo</span>
+            <span class="feature-tag">Balance Preview</span>
+            <span class="feature-tag">Validation</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════ UX / UI ═══════ -->
+  <section class="section fade-in" id="ux">
+    <div class="section-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      UX / UI
+    </div>
+    <h2 class="section-title">User Experience Principles</h2>
+    <p class="section-desc">Every interaction designed to feel smooth and intuitive.</p>
+
+    <div class="ux-grid">
+      <div class="ux-card">
+        <div class="icon-wrap icon-wrap-xl" style="background:rgba(108,92,231,0.08); color:var(--accent-primary); margin:0 auto 16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5.5 5.5L12 2l6.5 3.5L12 9 5.5 5.5z"/><path d="M12 22V9"/><path d="M18.5 5.5v6.5L12 15.5"/><path d="M5.5 5.5v6.5L12 15.5"/></svg>
+        </div>
+        <h4>Glassmorphism</h4>
+        <p>Frosted glass cards with backdrop-blur. Soft, clean, no harsh edges.</p>
+      </div>
+      <div class="ux-card">
+        <div class="icon-wrap icon-wrap-xl" style="background:rgba(0,184,148,0.08); color:var(--accent-green); margin:0 auto 16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <h4>Micro-Animations</h4>
+        <p>Button press, page transitions, number counting, and haptic feedback feel.</p>
+      </div>
+      <div class="ux-card">
+        <div class="icon-wrap icon-wrap-xl" style="background:rgba(9,132,227,0.08); color:var(--accent-secondary); margin:0 auto 16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+        </div>
+        <h4>Mobile-First</h4>
+        <p>Designed for thumb reach. Large touch targets. Bottom navigation.</p>
+      </div>
+      <div class="ux-card">
+        <div class="icon-wrap icon-wrap-xl" style="background:rgba(232,67,147,0.08); color:var(--accent-pink); margin:0 auto 16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <h4>Clarity</h4>
+        <p>Clear visual hierarchy. SVG icons (no emojis). Clean typography with Inter + Prompt.</p>
+      </div>
+      <div class="ux-card">
+        <div class="icon-wrap icon-wrap-xl" style="background:rgba(243,156,18,0.08); color:var(--accent-orange); margin:0 auto 16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h4>Feedback</h4>
+        <p>Toast notifications, loading skeletons, error states with retry. Never leave user guessing.</p>
+      </div>
+      <div class="ux-card">
+        <div class="icon-wrap icon-wrap-xl" style="background:rgba(0,206,201,0.08); color:var(--accent-cyan); margin:0 auto 16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h4>Real-Time</h4>
+        <p>Num adds ฿500 → Kaew sees it instantly. No manual refresh ever needed.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ DESIGN ═══════ -->
+  <section class="section fade-in" id="design">
+    <div class="section-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="13.5" cy="6.5" r="2.5"/><path d="M17.3 13.4A7 7 0 0 0 6.7 13.4"/><circle cx="12" cy="12" r="10"/></svg>
+      Design
+    </div>
+    <h2 class="section-title">Visual Design System</h2>
+    <p class="section-desc">Light theme, glassmorphism, clean icons, no gradients.</p>
+
+    <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:18px; height:18px;"><circle cx="13.5" cy="6.5" r="2.5"/><path d="M17.3 13.4A7 7 0 0 0 6.7 13.4"/><circle cx="12" cy="12" r="10"/></svg>
+      Color Palette
+    </h3>
+    <div class="color-row">
+      <div class="color-swatch" style="background:#f5f5f9; border:1px solid rgba(0,0,0,0.08);">
+        <div class="swatch-name" style="color:#1a1a2e">Background</div>
+        <div class="swatch-hex" style="color:#666">#f5f5f9</div>
+      </div>
+      <div class="color-swatch" style="background:#ffffff; border:1px solid rgba(0,0,0,0.08);">
+        <div class="swatch-name" style="color:#1a1a2e">Card</div>
+        <div class="swatch-hex" style="color:#666">#ffffff</div>
+      </div>
+      <div class="color-swatch" style="background:#6c5ce7;">
+        <div class="swatch-name" style="color:#fff">Primary</div>
+        <div class="swatch-hex" style="color:rgba(255,255,255,0.7)">#6c5ce7</div>
+      </div>
+      <div class="color-swatch" style="background:#00b894;">
+        <div class="swatch-name" style="color:#fff">Positive</div>
+        <div class="swatch-hex" style="color:rgba(255,255,255,0.7)">#00b894</div>
+      </div>
+      <div class="color-swatch" style="background:#e17055;">
+        <div class="swatch-name" style="color:#fff">Negative</div>
+        <div class="swatch-hex" style="color:rgba(255,255,255,0.7)">#e17055</div>
+      </div>
+      <div class="color-swatch" style="background:#0984e3;">
+        <div class="swatch-name" style="color:#fff">Accent</div>
+        <div class="swatch-hex" style="color:rgba(255,255,255,0.7)">#0984e3</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:15px; font-weight:700; margin:28px 0 14px; display:flex; align-items:center; gap:8px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:18px; height:18px;"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+      App Preview — Dashboard + Navigation
+    </h3>
+    <div class="nav-preview">
+      <div class="nav-phone-bar">
+        <div class="nav-circle-preview">
+          <div class="label-small">TOTAL BALANCE</div>
+          <div class="amount">฿12,500</div>
+          <div class="label-small" style="color:var(--accent-green)">They owe you</div>
+        </div>
+      </div>
+      <div class="nav-bar">
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Home</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>History</span>
+        </div>
+        <div class="nav-item">
+          <div class="nav-fab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>Records</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Profile</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ FILE STRUCTURE ═══════ -->
+  <section class="section fade-in" id="files">
+    <div class="section-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Files
+    </div>
+    <h2 class="section-title">Project Structure</h2>
+    <p class="section-desc">Every file we'll create — organized by purpose.</p>
+
+    <div class="file-tree-container">
+      <div class="file-tree-header">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="title">Money Borrow/</span>
+      </div>
+      <div class="file-tree">
+<span class="folder">public/</span>
+    sw.js                                <span class="comment">← Service worker (offline)</span>
+    <span class="folder">icons/</span>                            <span class="comment">← PWA icons (192, 512)</span>
+<span class="folder">src/</span>
+    <span class="folder">app/</span>
+        <span class="file-ts">manifest.ts</span>                  <span class="comment">← PWA manifest config</span>
+        <span class="file-css">globals.css</span>                  <span class="comment">← Design tokens + reset</span>
+        <span class="file-ts">layout.tsx</span>                   <span class="comment">← Root: fonts, meta, providers</span>
+        <span class="folder">login/</span>
+            <span class="file-ts">page.tsx</span>                 <span class="comment">← Profile select + PIN keypad</span>
+            <span class="file-css">login.module.css</span>        <span class="comment">← Login styles</span>
+        <span class="folder">(main)/</span>                       <span class="comment">← Auth-protected group</span>
+            <span class="file-ts">layout.tsx</span>               <span class="comment">← Bottom nav shell</span>
+            <span class="file-ts">page.tsx</span>                 <span class="comment">← Dashboard + balance circle</span>
+            <span class="folder">profile/</span>
+                <span class="file-ts">page.tsx</span>             <span class="comment">← Profile mgmt + avatar</span>
+            <span class="folder">transactions/</span>
+                <span class="file-ts">page.tsx</span>             <span class="comment">← Full audit trail</span>
+            <span class="folder">records/</span>
+                <span class="folder">new/</span>
+                    <span class="file-ts">page.tsx</span>         <span class="comment">← Add new record</span>
+                <span class="folder">[id]/</span>
+                    <span class="folder">edit/</span>
+                        <span class="file-ts">page.tsx</span>     <span class="comment">← Edit record</span>
+                    <span class="folder">decrease/</span>
+                        <span class="file-ts">page.tsx</span>     <span class="comment">← Paid back flow</span>
+        <span class="folder">api/</span>
+            <span class="folder">auth/</span>
+                <span class="file-ts">route.ts</span>             <span class="comment">← Login/logout API</span>
+            <span class="folder">upload/</span>
+                <span class="file-ts">route.ts</span>             <span class="comment">← Bill photo upload</span>
+    <span class="folder">components/</span>
+        <span class="file-ts">BalanceCircle.tsx</span>            <span class="comment">← SVG animated circle</span>
+        <span class="file-ts">QuickActions.tsx</span>             <span class="comment">← Add / Paid Back buttons</span>
+        <span class="file-ts">BottomNav.tsx</span>                <span class="comment">← Bottom nav with FAB</span>
+        <span class="file-ts">Header.tsx</span>                   <span class="comment">← Top bar + avatar</span>
+        <span class="file-ts">TransactionCard.tsx</span>          <span class="comment">← History list item</span>
+        <span class="file-ts">MoneyForm.tsx</span>                <span class="comment">← Shared add/edit form</span>
+        <span class="file-ts">AvatarSelector.tsx</span>           <span class="comment">← Male / Female avatar select</span>
+        <span class="file-ts">BillCompressor.tsx</span>           <span class="comment">← Client-side compression to Base64</span>
+        <span class="file-ts">PinKeypad.tsx</span>                <span class="comment">← PIN entry component</span>
+        <span class="file-ts">Toast.tsx</span>                    <span class="comment">← Toast notifications</span>
+        <span class="file-ts">Skeleton.tsx</span>                 <span class="comment">← Loading skeletons</span>
+    <span class="folder">lib/</span>
+        <span class="file-ts">firebase.ts</span>                  <span class="comment">← Client SDK init</span>
+        <span class="file-ts">firebase-admin.ts</span>            <span class="comment">← Server-only Admin SDK</span>
+        <span class="file-ts">auth.ts</span>                      <span class="comment">← Session helpers</span>
+        <span class="file-ts">utils.ts</span>                     <span class="comment">← Formatters (฿, dates)</span>
+        <span class="file-ts">validators.ts</span>                <span class="comment">← Input validation</span>
+    <span class="folder">hooks/</span>
+        <span class="file-ts">useAuth.ts</span>                   <span class="comment">← Auth state hook</span>
+        <span class="file-ts">useRecords.ts</span>                <span class="comment">← Real-time records</span>
+        <span class="file-ts">useTransactions.ts</span>           <span class="comment">← Real-time audit log</span>
+    <span class="folder">context/</span>
+        <span class="file-ts">AuthContext.tsx</span>              <span class="comment">← Auth provider</span>
+        <span class="file-ts">ToastContext.tsx</span>             <span class="comment">← Toast provider</span>
+    <span class="file-ts">middleware.ts</span>                    <span class="comment">← Route protection</span>
+<span class="file-json">.env.local</span>                        <span class="comment">← Firebase keys (secret)</span>
+<span class="file-ts">next.config.ts</span>
+<span class="file-json">tsconfig.json</span>
+<span class="file-json">package.json</span>
+firestore.rules                       <span class="comment">← Security rules</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ TIMELINE ═══════ -->
+  <section class="section fade-in" id="timeline">
+    <div class="section-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Timeline
+    </div>
+    <h2 class="section-title">Build Phases</h2>
+    <p class="section-desc">Step-by-step implementation — estimated ~6 hours total.</p>
+
+    <div class="timeline">
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--accent-primary)"></div>
+        <div class="timeline-card">
+          <h4>Project Setup & Design System <span class="phase-badge" style="background:rgba(108,92,231,0.1); color:var(--accent-primary);">Phase 1</span></h4>
+          <p>Next.js 15 init with TypeScript. Firebase project setup. globals.css with all design tokens. PWA manifest. Install dependencies.</p>
+          <span class="time-est"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~30 min</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--accent-secondary)"></div>
+        <div class="timeline-card">
+          <h4>Auth & Security <span class="phase-badge" style="background:rgba(9,132,227,0.1); color:var(--accent-secondary);">Phase 2</span></h4>
+          <p>Firebase Anonymous Auth. Profile creation. PIN keypad with bcrypt hashing. Cookie sessions (httpOnly, secure, sameSite). Middleware route protection. Lockout logic. Firestore security rules.</p>
+          <span class="time-est"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~50 min</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--accent-green)"></div>
+        <div class="timeline-card">
+          <h4>Main Dashboard <span class="phase-badge" style="background:rgba(0,184,148,0.1); color:var(--accent-green);">Phase 3</span></h4>
+          <p>Large SVG balance circle with stroke animation. Counter animation for ฿ amounts. Quick action buttons. Recent activity feed with real-time Firestore listeners.</p>
+          <span class="time-est"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~45 min</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--accent-orange)"></div>
+        <div class="timeline-card">
+          <h4>CRUD: Add / Edit / Paid Back <span class="phase-badge" style="background:rgba(243,156,18,0.1); color:var(--accent-orange);">Phase 4</span></h4>
+          <p>MoneyForm component (shared). Add new record with validation. Edit with audit trail. Paid Back flow with balance preview. Server-side validation in API routes.</p>
+          <span class="time-est"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~50 min</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--accent-red)"></div>
+        <div class="timeline-card">
+          <h4>Transaction History <span class="phase-badge" style="background:rgba(225,112,85,0.1); color:var(--accent-red);">Phase 5</span></h4>
+          <p>Chronological audit log. Filter by person/type/date. Expandable cards with edit history. Color-coded entries. Real-time updates.</p>
+          <span class="time-est"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~35 min</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--accent-pink)"></div>
+        <div class="timeline-card">
+          <h4>Profile & Avatar <span class="phase-badge" style="background:rgba(232,67,147,0.1); color:var(--accent-pink);">Phase 6</span></h4>
+          <p>Profile management page. Vector avatar selector (Male/Female icons) and accent color picker. Profile switching. Stats overview.</p>
+          <span class="time-est"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~25 min</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--accent-cyan)"></div>
+        <div class="timeline-card">
+          <h4>Bill Photo Handling <span class="phase-badge" style="background:rgba(0,206,201,0.1); color:var(--accent-cyan);">Phase 7</span></h4>
+          <p>Camera capture or file picker. Client-side canvas compression down to &lt; 80KB. Convert to Base64 string and save directly in Firestore. Thumbnail preview in history.</p>
+          <span class="time-est"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~30 min</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--accent-primary)"></div>
+        <div class="timeline-card">
+          <h4>Navigation, Toast & Polish <span class="phase-badge" style="background:rgba(108,92,231,0.1); color:var(--accent-primary);">Phase 8</span></h4>
+          <p>Bottom navigation with animated FAB. Header component. Toast notification system. Loading skeletons. Page transitions. Responsive testing.</p>
+          <span class="time-est"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~35 min</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--accent-green)"></div>
+        <div class="timeline-card">
+          <h4>PWA, Service Worker & Deploy <span class="phase-badge" style="background:rgba(0,184,148,0.1); color:var(--accent-green);">Phase 9</span></h4>
+          <p>Service worker caching (static assets, offline fallback). PWA install prompt. Deploy to Vercel. Final QA on mobile + desktop.</p>
+          <span class="time-est"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~25 min</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="total-time">
+      <div class="label">Total Estimated Build Time</div>
+      <div class="big">~5.5 Hours</div>
+    </div>
+  </section>
+
+  <!-- ═══════ VERIFICATION ═══════ -->
+  <section class="section fade-in" id="verify">
+    <div class="section-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      Verification
+    </div>
+    <h2 class="section-title">Testing Plan</h2>
+    <p class="section-desc">Every feature verified before we ship.</p>
+
+    <div class="verify-grid">
+
+      <div class="verify-card">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Build Checks
+        </h4>
+        <ul class="verify-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> <code>npm run build</code> passes</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> <code>npm run lint</code> — no errors</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> <code>npx tsc --noEmit</code> — types pass</li>
+        </ul>
+      </div>
+
+      <div class="verify-card">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Auth & Security
+        </h4>
+        <ul class="verify-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Create Num & Kaew profiles</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> PIN login → cookie persists 7 days</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Wrong PIN → shake + lockout after 5</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Unauthenticated → redirect to /login</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Firestore rules block direct access</li>
+        </ul>
+      </div>
+
+      <div class="verify-card">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Money CRUD
+        </h4>
+        <ul class="verify-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Add record → shows in dashboard</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Edit → audit trail logged</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Paid back → balance decreases</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Can't decrease more than balance</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Bill photo uploads + displays</li>
+        </ul>
+      </div>
+
+      <div class="verify-card">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg>
+          Real-Time Sync
+        </h4>
+        <ul class="verify-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Num adds → Kaew sees instantly</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Dashboard circle updates live</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Transaction history syncs</li>
+        </ul>
+      </div>
+
+      <div class="verify-card">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+          PWA & Mobile
+        </h4>
+        <ul class="verify-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> PWA install works on phone</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Offline fallback loads</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Responsive: 375px, 768px, 1024px+</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> 60fps animations</li>
+        </ul>
+      </div>
+
+      <div class="verify-card">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/></svg>
+          Deployment
+        </h4>
+        <ul class="verify-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Vercel deploy succeeds</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Production build works</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Environment variables set</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Full flow test on live URL</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="alert alert-success" style="margin-top:20px;">
+      <div class="icon-wrap" style="background:rgba(0,184,148,0.1); color:var(--accent-green);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="alert-body">
+        <h4>Ready to Build!</h4>
+        <p>All questions answered, security covered, design defined. Say <strong>"approve"</strong> or <strong>"let's go"</strong> and I'll start building phase by phase.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p style="font-weight:600;">Borrow Money App — Implementation Plan v2.0</p>
+    <p style="margin-top:6px;">For Num & Kaew · Light Theme · Glassmorphism · June 2026</p>
+  </footer>
+
+</div>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  const sections = document.querySelectorAll('section[id]');
+  const tocLinks = document.querySelectorAll('.toc a');
+  const tocObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        tocLinks.forEach(l => l.classList.remove('active'));
+        const a = document.querySelector(`.toc a[href="#${entry.target.id}"]`);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { threshold: 0.2 });
+  sections.forEach(s => tocObs.observe(s));
+</script>
+
+</body>
+</html>
