@@ -8,6 +8,8 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { auth } from "@/lib/firebase";
+import { signInAnonymously } from "firebase/auth";
 
 export interface AuthProfile {
   id: string;
@@ -60,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await fetch("/api/auth", { method: "DELETE" });
+      await auth.signOut();
     } finally {
       setProfile(null);
     }
@@ -67,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkSession = useCallback(async () => {
     setIsLoading(true);
+    // Pre-sign anonymously — fire-and-forget, completes while data loads
+    signInAnonymously(auth).catch(() => {});
     try {
       const res = await fetch("/api/auth/check");
       if (res.ok) {
