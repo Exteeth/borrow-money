@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth";
 
-const PUBLIC_PATHS = ["/login", "/manifest.webmanifest", "/icons"];
+const PUBLIC_PATHS = ["/login", "/manifest.webmanifest", "/icons", "/sw"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
