@@ -35,8 +35,9 @@ export async function GET() {
     });
   } catch (error: unknown) {
     console.error("Session check error:", error);
+    const errMsg = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: errMsg },
       { status: 500 }
     );
   }

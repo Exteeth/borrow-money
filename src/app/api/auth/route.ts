@@ -114,8 +114,9 @@ export async function POST(request: Request) {
     });
   } catch (error: unknown) {
     console.error("Auth error:", error);
+    const errMsg = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: errMsg },
       { status: 500 }
     );
   }
