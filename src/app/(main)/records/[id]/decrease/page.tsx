@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { db } from "@/lib/firebase";
+import { doc, setDoc, updateDoc, collection } from "firebase/firestore";
 import { formatBaht } from "@/lib/utils";
 import { useRecords } from "@/hooks/useRecords";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,20 +30,16 @@ export default function DecreaseRecordPage() {
     : null;
 
   const handleAmountChange = (value: string) => {
-    // Strip leading zeros, reject negatives + decimals at input level
     const cleaned = value.replace(/[^0-9]/g, "").replace(/^0+/, "");
     setAmount(cleaned);
     setError("");
   };
 
   const handleSubmit = async () => {
+    if (!profile || !record) return;
     const parsedAmount = parseInt(amount, 10);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       setError("Amount must be a positive whole number");
-      return;
-    }
-    if (parsedAmount > 99_999_999) {
-      setError("Amount cannot exceed ฿99,999,999");
       return;
     }
     if (parsedAmount > currentBalance) {
@@ -55,20 +53,26 @@ export default function DecreaseRecordPage() {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/records/${recordId}/decrease`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: parsedAmount }),
+      const newBalance = currentBalance - parsedAmount;
+
+      await updateDoc(doc(db, "records", recordId), {
+        currentBalance: newBalance,
       });
 
-      if (!res.ok) {
-        const err = (await res.json()) as { error: string };
-        setError(err.error ?? "Failed to record payment");
-        return;
-      }
+      // Write audit transaction
+      await setDoc(doc(db, "transactions", doc(collection(db, "transactions")).id), {
+        recordId,
+        action: "decrease",
+        amount: parsedAmount,
+        prevBalance: currentBalance,
+        newBalance,
+        editedBy: profile.id,
+        editedByName: profile.name,
+        note: `Paid back ฿${parsedAmount.toLocaleString("th-TH")}`,
+        createdAt: new Date(),
+      });
 
       router.push("/");
-      router.refresh();
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -106,7 +110,6 @@ export default function DecreaseRecordPage() {
             value={amount}
             onChange={(e) => handleAmountChange(e.target.value)}
             onKeyDown={(e) => {
-              // Block decimal point, minus, and 'e' at the hardware level
               if (e.key === "." || e.key === "," || e.key === "-" || e.key === "e" || e.key === "E" || e.key === "+") {
                 e.preventDefault();
               }

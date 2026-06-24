@@ -2,31 +2,49 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { db } from "@/lib/firebase";
+import { collection, doc, setDoc } from "firebase/firestore";
 import MoneyForm, { type MoneyFormData } from "@/components/MoneyForm";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function NewRecordPage() {
   const router = useRouter();
+  const { profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (data: MoneyFormData) => {
+    if (!profile) return;
     setIsLoading(true);
     try {
-      const res = await fetch("/api/records", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+      const txnId = doc(collection(db, "records")).id;
+
+      await setDoc(doc(db, "records", txnId), {
+        type: data.type,
+        personName: data.personName,
+        amount: data.amount,
+        currentBalance: data.amount,
+        description: data.description,
+        createdBy: profile.id,
+        createdAt: new Date(),
       });
 
-      if (!res.ok) {
-        const err = await res.json() as { error: string };
-        alert(err.error ?? "Failed to create record");
-        return;
-      }
+      // Write audit transaction
+      await setDoc(doc(db, "transactions", doc(collection(db, "transactions")).id), {
+        recordId: txnId,
+        action: "create",
+        amount: data.amount,
+        prevBalance: 0,
+        newBalance: data.amount,
+        editedBy: profile.id,
+        editedByName: profile.name,
+        note: data.description,
+        createdAt: new Date(),
+      });
 
       router.push("/");
-      router.refresh();
-    } catch {
-      alert("Network error. Please try again.");
+    } catch (err) {
+      console.error("Create error:", err);
+      alert("Failed to create record");
     } finally {
       setIsLoading(false);
     }

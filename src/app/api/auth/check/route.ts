@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server";
 import { getSessionCookie } from "@/lib/auth";
-import { getAdminDb } from "@/lib/firebase-admin";
+import { initializeApp, getApps } from "firebase/app";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+function getDb() {
+  const app = getApps().length ? getApps()[0]! : initializeApp(firebaseConfig);
+  return getFirestore(app);
+}
 
 export async function GET() {
   try {
@@ -9,36 +24,28 @@ export async function GET() {
       return NextResponse.json({ profile: null }, { status: 401 });
     }
 
-    // Verify the profile still exists
-    const db = getAdminDb();
-    const profileDoc = await db
-      .collection("profiles")
-      .doc(session.profileId)
-      .get();
+    const db = getDb();
+    const profileSnap = await getDoc(doc(db, "profiles", session.profileId));
 
-    if (!profileDoc.exists) {
+    if (!profileSnap.exists()) {
       return NextResponse.json({ profile: null }, { status: 401 });
     }
 
-    const profileData = profileDoc.data();
-    if (!profileData) {
+    const data = profileSnap.data();
+    if (!data) {
       return NextResponse.json({ profile: null }, { status: 401 });
     }
 
     return NextResponse.json({
       profile: {
         id: session.profileId,
-        name: profileData.name,
-        avatarType: profileData.avatarType,
-        color: profileData.color,
+        name: data.name,
+        avatarType: data.avatarType,
+        color: data.color,
       },
     });
   } catch (error: unknown) {
     console.error("Session check error:", error);
-    const errMsg = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json(
-      { error: errMsg },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

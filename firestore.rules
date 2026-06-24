@@ -72,29 +72,17 @@ service cloud.firestore {
 
     // ── Records Collection ──
     match /records/{recordId} {
-      // Authenticated users can read all records
       allow read: if isAuthenticated();
-
-      // Users can create records if data is valid
-      allow create: if isAuthenticated()
-        && isValidRecord();
-
-      // Users can update records (edit amount, description, etc.)
+      allow create: if isAuthenticated() && isValidRecord();
       allow update: if isAuthenticated()
-        && request.resource.data.createdBy == resource.data.createdBy
-        && request.resource.data.createdAt == resource.data.createdAt;
-
-      // Users can't delete records (use soft-delete or decrease instead)
+        && request.resource.data.createdBy == resource.data.createdBy;
       allow delete: if false;
     }
 
     // ── Transactions Collection (Audit Log) ──
     match /transactions/{transactionId} {
-      // All authenticated users can read all transactions
       allow read: if isAuthenticated();
-
-      // Server-only writes (Admin SDK) — no client writes
-      allow create: if isValidTransaction();
+      allow create: if isAuthenticated() && isValidTransaction();
       allow update, delete: if false;
     }
   }

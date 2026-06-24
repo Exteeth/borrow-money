@@ -1,29 +1,35 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import {
-  setSessionCookie,
-  clearSessionCookie,
-} from "@/lib/auth";
-import { getAdminDb } from "@/lib/firebase-admin";
+import { setSessionCookie, clearSessionCookie } from "@/lib/auth";
+import { initializeApp, getApps } from "firebase/app";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { pinSchema } from "@/lib/validators";
+
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+function getDb() {
+  const app = getApps().length ? getApps()[0]! : initializeApp(firebaseConfig);
+  return getFirestore(app);
+}
 
 const MAX_PIN_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 30;
-
-// In-memory lockout store (cleared on server restart; Firestore-based in production)
 const lockoutMap = new Map<string, { count: number; lockedUntil: number }>();
 
 export async function POST(request: Request) {
   try {
     const body = await request.json() as { profileId: string; pin: string };
 
-    // Validate PIN format
     const result = pinSchema.safeParse(body.pin);
     if (!result.success) {
-      return NextResponse.json(
-        { error: "Invalid PIN format" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid PIN format" }, { status: 400 });
     }
 
     const { profileId, pin } = body;
@@ -39,35 +45,25 @@ export async function POST(request: Request) {
           { status: 429 }
         );
       }
-      // Lockout expired → reset
       lockoutMap.delete(profileId);
     }
 
-    // Fetch profile from Firestore via Admin SDK
-    const db = getAdminDb();
-    const profileDoc = await db.collection("profiles").doc(profileId).get();
+    // Read profile from Firestore (client SDK — no Admin needed)
+    const db = getDb();
+    const profileSnap = await getDoc(doc(db, "profiles", profileId));
 
-    if (!profileDoc.exists) {
-      return NextResponse.json(
-        { error: "Profile not found" },
-        { status: 404 }
-      );
+    if (!profileSnap.exists()) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    const profile = profileDoc.data();
-
-    if (!profile) {
-      return NextResponse.json(
-        { error: "Profile data is invalid" },
-        { status: 500 }
-      );
+    const profile = profileSnap.data();
+    if (!profile?.pin) {
+      return NextResponse.json({ error: "Profile data is invalid" }, { status: 500 });
     }
 
-    // Compare PIN
-    const isValid = await bcrypt.compare(pin, profile.pin);
+    const isValid = await bcrypt.compare(pin, profile.pin as string);
 
     if (!isValid) {
-      // Track failed attempt
       const currentCount = (lockout?.count ?? 0) + 1;
       if (currentCount >= MAX_PIN_ATTEMPTS) {
         lockoutMap.set(profileId, {
@@ -75,32 +71,24 @@ export async function POST(request: Request) {
           lockedUntil: Date.now() + LOCKOUT_SECONDS * 1000,
         });
         return NextResponse.json(
-          {
-            error: `Locked out for ${LOCKOUT_SECONDS}s after ${MAX_PIN_ATTEMPTS} failed attempts`,
-            lockout: true,
-          },
+          { error: `Locked out for ${LOCKOUT_SECONDS}s`, lockout: true },
           { status: 429 }
         );
       }
-      lockoutMap.set(profileId, {
-        count: currentCount,
-        lockedUntil: 0,
-      });
+      lockoutMap.set(profileId, { count: currentCount, lockedUntil: 0 });
       return NextResponse.json(
         { error: "Incorrect PIN", remainingAttempts: MAX_PIN_ATTEMPTS - currentCount },
         { status: 401 }
       );
     }
 
-    // Success — clear lockout
     lockoutMap.delete(profileId);
 
-    // Set session cookie
     await setSessionCookie({
       uid: profileId,
       profileId,
-      profileName: profile.name,
-      deviceId: profile.deviceId ?? "unknown",
+      profileName: profile.name as string,
+      deviceId: (profile.deviceId as string) ?? "unknown",
     });
 
     return NextResponse.json({
@@ -114,11 +102,7 @@ export async function POST(request: Request) {
     });
   } catch (error: unknown) {
     console.error("Auth error:", error);
-    const errMsg = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json(
-      { error: errMsg },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -128,9 +112,6 @@ export async function DELETE() {
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     console.error("Logout error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
