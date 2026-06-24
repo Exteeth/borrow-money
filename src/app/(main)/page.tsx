@@ -39,7 +39,7 @@ export default function DashboardPage() {
     setAddError("");
   };
 
-  const handleQuickAdd = async () => {
+  const handleQuickAdd = async (actionType: "debt" | "payback") => {
     if (!profile) return;
     const parsed = parseInt(addAmount, 10);
     if (isNaN(parsed) || parsed <= 0) {
@@ -55,8 +55,19 @@ export default function DashboardPage() {
     setAddError("");
 
     const isKaew = myName === "Kaew";
-    const recordType = isKaew ? "lend" : "borrow";
-    const targetPerson = isKaew ? "Num" : "Kaew";
+    let recordType: "borrow" | "lend";
+    let targetPerson: string;
+    let defaultNote: string;
+
+    if (actionType === "debt") {
+      recordType = isKaew ? "lend" : "borrow";
+      targetPerson = isKaew ? "Num" : "Kaew";
+      defaultNote = isKaew ? "ให้ Num ยืม" : "ยืมเงินจากแก้ว";
+    } else {
+      recordType = isKaew ? "borrow" : "lend";
+      targetPerson = isKaew ? "Num" : "Kaew";
+      defaultNote = isKaew ? "ได้รับเงินคืนจาก Num" : "คืนเงินให้แก้ว";
+    }
 
     try {
       const recordId = doc(collection(db, "records")).id;
@@ -79,13 +90,13 @@ export default function DashboardPage() {
         newBalance: parsed,
         editedBy: profile.id,
         editedByName: profile.name,
-        note: addNote.trim() || (isKaew ? "ให้ Num ยืม" : "ยืมเงินจากแก้ว"),
+        note: addNote.trim() || defaultNote,
         createdAt: new Date(),
       });
 
       setAddAmount("");
       setAddNote("");
-      addToast("บันทึกข้อมูลการยืมสำเร็จ", "success");
+      addToast(actionType === "debt" ? "บันทึกข้อมูลการยืมสำเร็จ" : "บันทึกข้อมูลการคืนเงินสำเร็จ", "success");
     } catch {
       setAddError("ล้มเหลวในการบันทึกข้อมูล");
       addToast("ล้มเหลวในการบันทึกข้อมูล", "error");
@@ -159,7 +170,7 @@ export default function DashboardPage() {
             placeholder="0"
             value={addAmount}
             onChange={e => handleAmountChange(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") handleQuickAdd(); }}
+            onKeyDown={e => { if (e.key === "Enter") handleQuickAdd("debt"); }}
             disabled={addSaving}
           />
         </div>
@@ -175,13 +186,22 @@ export default function DashboardPage() {
         
         {addError && <p className="form-error">{addError}</p>}
         
-        <button 
-          className="wisdom-submit-btn" 
-          onClick={handleQuickAdd} 
-          disabled={addSaving || !addAmount}
-        >
-          {addSaving ? "กำลังบันทึก..." : myName === "Kaew" ? "ให้ Num ยืม" : "ยืมเงินจากแก้ว"}
-        </button>
+        <div className="wisdom-actions-row">
+          <button 
+            className="wisdom-submit-btn" 
+            onClick={() => handleQuickAdd("debt")} 
+            disabled={addSaving || !addAmount}
+          >
+            {addSaving ? "กำลังบันทึก..." : myName === "Kaew" ? "ให้ Num ยืม" : "ยืมเงินจากแก้ว"}
+          </button>
+          <button 
+            className="wisdom-submit-btn secondary" 
+            onClick={() => handleQuickAdd("payback")} 
+            disabled={addSaving || !addAmount}
+          >
+            {addSaving ? "กำลังบันทึก..." : myName === "Kaew" ? "ได้รับเงินคืน" : "คืนเงินให้แก้ว"}
+          </button>
+        </div>
       </div>
 
       {/* Records List */}

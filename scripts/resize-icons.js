@@ -2,7 +2,7 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 
-const sourcePath = '/home/exteeth/.gemini/antigravity-ide/brain/9e4eca3d-1bca-44a5-9d01-f90899fba585/app_icon_wisdom_1782314406120.png';
+const sourcePath = '/home/exteeth/.gemini/antigravity-ide/brain/9e4eca3d-1bca-44a5-9d01-f90899fba585/app_icon_wisdom_nk_1782315490119.png';
 const dest192 = path.join(__dirname, '../public/icons/icon-192x192.png');
 const dest512 = path.join(__dirname, '../public/icons/icon-512x512.png');
 
