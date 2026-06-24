@@ -889,7 +889,7 @@ code {
   font-size: 32px;
   font-weight: 800;
   outline: none;
-  font-family: inherit;
+  font-family: var(--font-cinzel), serif;
 }
 .wisdom-amount-input::placeholder {
   color: rgba(197, 160, 89, 0.25);
@@ -1148,11 +1148,11 @@ code {
   text-transform: uppercase;
 }
 .wisdom-card-amount {
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 600;
-  letter-spacing: -0.5px;
+  letter-spacing: 1px;
   line-height: 1;
-  font-family: var(--font-cormorant), serif;
+  font-family: var(--font-cinzel), serif;
   background: linear-gradient(to right, #ffffff, #eae6d8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

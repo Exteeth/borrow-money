@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Prompt, Cormorant_Garamond } from "next/font/google";
+import { Inter, Prompt, Cormorant_Garamond, Cinzel } from "next/font/google";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
@@ -22,6 +22,13 @@ const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   style: ["normal", "italic"],
+  display: "swap",
+});
+
+const cinzel = Cinzel({
+  variable: "--font-cinzel",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -52,7 +59,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className={`${inter.variable} ${prompt.variable} ${cormorant.variable}`}>
+    <html lang="th" className={`${inter.variable} ${prompt.variable} ${cormorant.variable} ${cinzel.variable}`}>
       <body>
         <ServiceWorkerRegister />
         {children}
