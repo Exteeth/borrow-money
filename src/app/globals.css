@@ -206,10 +206,15 @@ code {
   padding: 20px 0;
 }
 .section-heading {
+  font-family: var(--font-cormorant), serif;
   font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 12px;
+  font-weight: 600;
+  color: var(--accent-primary);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  border-bottom: 1px solid rgba(197, 160, 89, 0.12);
+  padding-bottom: 6px;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -499,14 +504,17 @@ code {
   padding: 0 4px;
 }
 .page-title {
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--text-primary);
+  font-family: var(--font-cormorant), serif;
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--accent-primary);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
   margin-bottom: 4px;
 }
 .page-subtitle {
-  font-size: 14px;
-  color: var(--text-secondary);
+  font-size: 13px;
+  color: var(--text-muted);
   margin-bottom: 20px;
 }
 
@@ -1030,3 +1038,177 @@ code {
   align-items: center;
   justify-content: center;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   THE WISDOM LUXURY CARD
+   ══════════════════════════════════════════════════════════════ */
+.wisdom-card-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 24px;
+  perspective: 1000px;
+}
+.wisdom-card {
+  width: 100%;
+  max-width: 350px;
+  height: 200px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #18191d 0%, #080809 100%);
+  border: 1.5px solid rgba(197, 160, 89, 0.35);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85), 0 0 35px rgba(197, 160, 89, 0.05), inset 0 0 15px rgba(197, 160, 89, 0.08);
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-family: var(--font-cormorant), serif;
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  transform-style: preserve-3d;
+}
+.wisdom-card:hover {
+  transform: translateY(-6px) rotateX(4deg) rotateY(-2deg);
+  border-color: rgba(197, 160, 89, 0.55);
+  box-shadow: 0 28px 50px rgba(0, 0, 0, 0.95), 0 0 45px rgba(197, 160, 89, 0.08), inset 0 0 20px rgba(197, 160, 89, 0.12);
+}
+.wisdom-card-pattern {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: 
+    radial-gradient(circle at 80% 20%, rgba(197, 160, 89, 0.08) 0%, transparent 40%),
+    linear-gradient(210deg, transparent 40%, rgba(197, 160, 89, 0.02) 41%, rgba(197, 160, 89, 0.02) 43%, transparent 44%),
+    linear-gradient(210deg, transparent 46%, rgba(197, 160, 89, 0.03) 47%, rgba(197, 160, 89, 0.03) 49%, transparent 50%),
+    linear-gradient(210deg, transparent 52%, rgba(197, 160, 89, 0.02) 53%, rgba(197, 160, 89, 0.02) 55%, transparent 56%);
+  pointer-events: none;
+  opacity: 0.85;
+}
+.wisdom-card-glow {
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 60%);
+  pointer-events: none;
+  transform: translate(-10%, -10%);
+  transition: transform 0.5s ease-out;
+}
+.wisdom-card:hover .wisdom-card-glow {
+  transform: translate(10%, 10%);
+}
+.wisdom-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 2;
+}
+.wisdom-card-brand-group {
+  display: flex;
+  flex-direction: column;
+}
+.wisdom-card-brand {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  letter-spacing: 3.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.wisdom-card-type {
+  font-size: 8px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+.wisdom-card-chip {
+  width: 36px;
+  height: 26px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #f3e5ab 0%, #c5a059 40%, #c5a059 70%, #8c6c2b 100%);
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+.wisdom-card-chip::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background-image: 
+    linear-gradient(90deg, transparent 30%, rgba(0,0,0,0.2) 31%, rgba(0,0,0,0.2) 32%, transparent 33%, transparent 66%, rgba(0,0,0,0.2) 67%, rgba(0,0,0,0.2) 68%, transparent 69%),
+    linear-gradient(0deg, transparent 48%, rgba(0,0,0,0.25) 49%, rgba(0,0,0,0.25) 51%, transparent 52%);
+  border-radius: 4px;
+}
+.wisdom-card-body {
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+  margin: 10px 0;
+}
+.wisdom-card-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+.wisdom-card-amount {
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  font-family: var(--font-cormorant), serif;
+  background: linear-gradient(to right, #ffffff, #eae6d8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+.wisdom-card-amount.positive {
+  background: linear-gradient(135deg, #fff 0%, #c5a059 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.wisdom-card-amount.negative {
+  background: linear-gradient(135deg, #fff 0%, #c87a68 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.wisdom-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  z-index: 2;
+}
+.wisdom-card-holder-group {
+  display: flex;
+  flex-direction: column;
+}
+.wisdom-card-holder-label {
+  font-size: 7px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 1.5px;
+}
+.wisdom-card-holder {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 1.05px;
+}
+.wisdom-card-status-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: rgba(197, 160, 89, 0.08);
+  border: 1px solid rgba(197, 160, 89, 0.25);
+  color: var(--accent-primary);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.wisdom-card-status-badge.negative {
+  background: rgba(200, 122, 104, 0.06);
+  border-color: rgba(200, 122, 104, 0.22);
+  color: var(--accent-red);
+}
+

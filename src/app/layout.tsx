@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Prompt } from "next/font/google";
+import { Inter, Prompt, Cormorant_Garamond } from "next/font/google";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
@@ -14,6 +14,14 @@ const prompt = Prompt({
   variable: "--font-prompt",
   subsets: ["thai"],
   weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
+
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -35,7 +43,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#6c5ce7",
+  themeColor: "#0b0c0e",
 };
 
 export default function RootLayout({
@@ -44,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className={`${inter.variable} ${prompt.variable}`}>
+    <html lang="th" className={`${inter.variable} ${prompt.variable} ${cormorant.variable}`}>
       <body>
         <ServiceWorkerRegister />
         {children}

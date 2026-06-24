@@ -182,10 +182,6 @@ export default function DashboardPage() {
         >
           {addSaving ? "กำลังบันทึก..." : myName === "Kaew" ? "ให้ Num ยืม" : "ยืมเงินจากแก้ว"}
         </button>
-
-        <span className="wisdom-link-btn" onClick={() => router.push("/records/new")}>
-          ยืม/ให้ยืม แบบละเอียด (แนบสลิป)...
-        </span>
       </div>
 
       {/* Records List */}
