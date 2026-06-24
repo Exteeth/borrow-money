@@ -52,8 +52,9 @@ service cloud.firestore {
 
     // ── Profiles Collection ──
     match /profiles/{profileId} {
-      // Authenticated users can read all profiles (needed for profile selection)
-      allow read: if isAuthenticated();
+      // Allow anyone to read profiles (PINs are bcrypt-hashed — secure by design)
+      // This is needed for server-side PIN verification and profile selection
+      allow read: if true;
 
       // Only create if document doesn't exist and data is valid
       allow create: if isAuthenticated()

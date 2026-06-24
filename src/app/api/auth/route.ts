@@ -15,8 +15,9 @@ const firebaseConfig = {
 };
 
 function getDb() {
-  const app = getApps().length ? getApps()[0]! : initializeApp(firebaseConfig);
-  return getFirestore(app);
+  const apps = getApps();
+  if (apps.length && apps[0]) return getFirestore(apps[0]);
+  return getFirestore(initializeApp(firebaseConfig));
 }
 
 const MAX_PIN_ATTEMPTS = 5;
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
       lockoutMap.delete(profileId);
     }
 
-    // Read profile from Firestore (client SDK — no Admin needed)
+    // Read profile from Firestore
     const db = getDb();
     const profileSnap = await getDoc(doc(db, "profiles", profileId));
 
@@ -101,8 +102,12 @@ export async function POST(request: Request) {
       },
     });
   } catch (error: unknown) {
-    console.error("Auth error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Auth error:", message);
+    return NextResponse.json(
+      { error: `Server error: ${message}` },
+      { status: 500 }
+    );
   }
 }
 
@@ -111,7 +116,8 @@ export async function DELETE() {
     await clearSessionCookie();
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    console.error("Logout error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Logout error:", message);
+    return NextResponse.json({ error: `Server error: ${message}` }, { status: 500 });
   }
 }
