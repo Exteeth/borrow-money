@@ -15,7 +15,6 @@ export default function DashboardPage() {
 
   // Quick Add state
   const [showAdd, setShowAdd] = useState(false);
-  const [addName, setAddName] = useState(myName === "Num" ? "Kaew" : myName === "Kaew" ? "Num" : "");
   const [addAmount, setAddAmount] = useState("");
   const [addType, setAddType] = useState<"borrow" | "lend">("borrow");
   const [addSaving, setAddSaving] = useState(false);
@@ -30,7 +29,6 @@ export default function DashboardPage() {
   const handleAdd = async () => {
     if (!profile) return;
     const parsed = parseInt(addAmount, 10);
-    if (!addName.trim()) { setAddError("Enter a name"); return; }
     if (isNaN(parsed) || parsed <= 0) { setAddError("Enter a valid amount"); return; }
     if (parsed > 99_999_999) { setAddError("Amount too large"); return; }
 
@@ -40,7 +38,7 @@ export default function DashboardPage() {
       const id = doc(collection(db, "records")).id;
       await setDoc(doc(db, "records", id), {
         type: addType,
-        personName: addName.trim(),
+        personName: otherName,
         amount: parsed,
         currentBalance: parsed,
         description: "",
@@ -114,8 +112,7 @@ export default function DashboardPage() {
             <button className={`qt-btn ${addType === "borrow" ? "active borrow" : ""}`} onClick={() => setAddType("borrow")}>I Borrowed</button>
             <button className={`qt-btn ${addType === "lend" ? "active lend" : ""}`} onClick={() => setAddType("lend")}>I Lent</button>
           </div>
-          <input className="qt-input" placeholder="Name" value={addName} onChange={e => setAddName(e.target.value)} maxLength={50} />
-          <input className="qt-input" type="number" inputMode="numeric" placeholder="Amount (฿)" value={addAmount}
+          <input className="qt-input" type="number" inputMode="numeric" placeholder={`Amount (฿)`} value={addAmount}
             onChange={e => setAddAmount(e.target.value.replace(/[^0-9]/g, ""))}
             onKeyDown={e => { if (e.key === "Enter") handleAdd(); }} />
           {addError && <p className="form-error">{addError}</p>}
