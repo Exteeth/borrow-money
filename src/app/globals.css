@@ -10,35 +10,35 @@
 
 :root {
   /* Background */
-  --bg-primary: #f5f5f9;
-  --bg-secondary: #eeeef4;
-  --bg-white: #ffffff;
-  --bg-card: rgba(255, 255, 255, 0.65);
-  --bg-card-hover: rgba(255, 255, 255, 0.85);
-  --bg-card-solid: #ffffff;
+  --bg-primary: #0b0c0e;
+  --bg-secondary: #111215;
+  --bg-white: #17181c;
+  --bg-card: rgba(20, 21, 25, 0.6);
+  --bg-card-hover: rgba(28, 29, 35, 0.85);
+  --bg-card-solid: #1a1b20;
 
   /* Text */
-  --text-primary: #1a1a2e;
-  --text-secondary: #5a5a7a;
-  --text-muted: #9a9ab0;
+  --text-primary: #e5dec9;
+  --text-secondary: #a9a497;
+  --text-muted: #787367;
 
   /* Accent */
-  --accent-primary: #6c5ce7;
-  --accent-secondary: #0984e3;
-  --accent-green: #00b894;
-  --accent-red: #e17055;
-  --accent-orange: #f39c12;
-  --accent-pink: #e84393;
-  --accent-cyan: #00cec9;
+  --accent-primary: #c5a059;
+  --accent-secondary: #e2c286;
+  --accent-green: #82ad8a;
+  --accent-red: #c87a68;
+  --accent-orange: #d59b43;
+  --accent-pink: #b45d7a;
+  --accent-cyan: #77b8b5;
 
   /* Glass */
-  --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-border: rgba(255, 255, 255, 0.7);
-  --glass-shadow: rgba(0, 0, 0, 0.06);
+  --glass-bg: rgba(16, 17, 21, 0.7);
+  --glass-border: rgba(197, 160, 89, 0.22);
+  --glass-shadow: rgba(0, 0, 0, 0.5);
 
   /* Borders */
-  --border-light: rgba(0, 0, 0, 0.06);
-  --border-medium: rgba(0, 0, 0, 0.1);
+  --border-light: rgba(197, 160, 89, 0.12);
+  --border-medium: rgba(197, 160, 89, 0.25);
 
   /* Radii */
   --radius: 16px;
@@ -47,10 +47,10 @@
   --radius-xl: 32px;
 
   /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 16px 60px rgba(0, 0, 0, 0.08);
-  --shadow-xl: 0 24px 80px rgba(0, 0, 0, 0.10);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 20px rgba(197, 160, 89, 0.05);
+  --shadow-xl: 0 24px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(197, 160, 89, 0.08);
 }
 
 html {
@@ -218,38 +218,59 @@ code {
 .balance-circle-wrapper {
   display: flex;
   justify-content: center;
+  padding: 10px 0;
 }
 .balance-circle {
-  width: 180px;
-  height: 180px;
+  width: 190px;
+  height: 190px;
   border-radius: 50%;
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  border: 3px solid var(--glass-border);
-  box-shadow: var(--shadow-lg);
+  background: radial-gradient(circle at center, #17181c 0%, #0c0c0e 100%);
+  border: 2px solid var(--accent-primary);
+  box-shadow: 0 0 35px rgba(197, 160, 89, 0.15), inset 0 0 20px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(197, 160, 89, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+.balance-circle::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  border-radius: 50%;
+  border: 1px dashed rgba(197, 160, 89, 0.35);
+  pointer-events: none;
 }
 .balance-inner {
   text-align: center;
+  z-index: 2;
+  padding: 0 12px;
 }
 .balance-amount {
   display: block;
   font-size: 32px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--text-primary);
+  letter-spacing: -0.5px;
 }
 .balance-amount.positive {
-  color: var(--accent-green);
+  color: var(--accent-primary);
 }
 .balance-amount.negative {
   color: var(--accent-red);
 }
 .balance-label {
-  font-size: 13px;
+  display: block;
+  font-size: 10px;
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 6px;
+  line-height: 1.3;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -302,13 +323,75 @@ code {
 }
 .activity-card {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.activity-card.paid-off {
+  opacity: 0.45;
+}
+.activity-card-main-row {
+  display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 14px 18px;
-  border-radius: var(--radius);
+  cursor: pointer;
+  width: 100%;
 }
-.activity-card.paid-off {
-  opacity: 0.5;
+.activity-card-actions {
+  display: flex;
+  gap: 10px;
+  padding: 12px 18px 16px;
+  background: rgba(0, 0, 0, 0.25);
+  border-top: 1px solid var(--border-light);
+  animation: slideDown 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ac-btn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.ac-btn:active {
+  transform: scale(0.96);
+}
+.ac-btn.edit {
+  border-color: rgba(197, 160, 89, 0.2);
+  color: var(--accent-primary);
+}
+.ac-btn.edit:hover {
+  background: rgba(197, 160, 89, 0.08);
+}
+.ac-btn.delete {
+  border-color: rgba(200, 122, 104, 0.2);
+  color: var(--accent-red);
+}
+.ac-btn.delete:hover {
+  background: rgba(200, 122, 104, 0.08);
+}
+.ac-btn.pay {
+  border-color: rgba(130, 173, 138, 0.2);
+  color: var(--accent-green);
+}
+.ac-btn.pay:hover {
+  background: rgba(130, 173, 138, 0.08);
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .activity-left {
   display: flex;
@@ -755,93 +838,116 @@ code {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   BIG ADD BUTTON
+   WISDOM QUICK ADD FORM
    ══════════════════════════════════════════════════════════════ */
-.big-add-btn {
-  width: 100%;
-  padding: 20px;
-  border: 2px dashed rgba(108, 92, 231, 0.4);
-  border-radius: var(--radius-lg);
-  background: rgba(108, 92, 231, 0.06);
-  color: var(--accent-primary);
-  font-size: 18px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  transition: all 0.2s;
-}
-.big-add-btn:active { transform: scale(0.97); background: rgba(108, 92, 231, 0.12); }
-.big-add-btn svg { width: 28px; height: 28px; }
-
-/* ══════════════════════════════════════════════════════════════
-   QUICK ADD FORM
-   ══════════════════════════════════════════════════════════════ */
-.quick-add-card {
-  padding: 20px;
+.wisdom-quick-add {
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-.quick-add-toggle {
-  display: flex;
-  gap: 8px;
-}
-.qt-btn {
-  flex: 1;
-  padding: 12px;
-  border: 2px solid var(--border-light);
-  border-radius: var(--radius);
+  gap: 16px;
+  position: relative;
+  border-radius: var(--radius-lg);
   background: var(--glass-bg);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(197, 160, 89, 0.18);
+  box-shadow: var(--shadow-md);
+  margin-top: 10px;
 }
-.qt-btn.active.borrow { border-color: var(--accent-red); background: rgba(225, 112, 85, 0.08); color: var(--accent-red); }
-.qt-btn.active.lend { border-color: var(--accent-green); background: rgba(0, 184, 148, 0.08); color: var(--accent-green); }
-.qt-input {
-  padding: 14px 16px;
+.wisdom-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-bottom: 2.5px solid rgba(197, 160, 89, 0.18);
+  transition: all 0.3s ease;
+  padding: 0 4px;
+}
+.wisdom-input-group:focus-within {
+  border-color: var(--accent-primary);
+  box-shadow: 0 2px 0 rgba(197, 160, 89, 0.2);
+}
+.wisdom-currency-symbol {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--accent-primary);
+  margin-right: 12px;
+  user-select: none;
+}
+.wisdom-amount-input {
+  width: 100%;
+  padding: 12px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 32px;
+  font-weight: 800;
+  outline: none;
+  font-family: inherit;
+}
+.wisdom-amount-input::placeholder {
+  color: rgba(197, 160, 89, 0.25);
+}
+.wisdom-note-input {
+  width: 100%;
+  padding: 12px 16px;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
-  font-size: 16px;
-  font-family: inherit;
-  background: var(--bg-white);
+  background: rgba(0, 0, 0, 0.25);
   color: var(--text-primary);
+  font-size: 14px;
   outline: none;
+  font-family: inherit;
+  transition: all 0.25s ease;
+}
+.wisdom-note-input:focus {
+  border-color: rgba(197, 160, 89, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+}
+.wisdom-submit-btn {
   width: 100%;
-}
-.qt-input:focus { border-color: var(--accent-primary); }
-.quick-add-actions {
-  display: flex;
-  gap: 10px;
-}
-.qt-cancel {
-  flex: 1;
-  padding: 14px;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius);
-  background: var(--glass-bg);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.qt-save {
-  flex: 2;
-  padding: 14px;
+  padding: 16px;
   border: none;
   border-radius: var(--radius);
-  background: var(--accent-primary);
-  color: #fff;
+  background: linear-gradient(135deg, #e5d3b3 0%, #c5a059 50%, #9e7d3b 100%);
+  color: #0b0c0e;
   font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(197, 160, 89, 0.15);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.wisdom-submit-btn:hover:not(:disabled) {
+  box-shadow: 0 6px 24px rgba(197, 160, 89, 0.25);
+  transform: translateY(-1px);
+}
+.wisdom-submit-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 10px rgba(197, 160, 89, 0.1);
+}
+.wisdom-submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.wisdom-link-btn {
+  text-align: center;
+  font-size: 12px;
+  color: var(--accent-primary);
+  text-decoration: none;
   font-weight: 700;
   cursor: pointer;
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  display: inline-block;
+  align-self: center;
 }
-.qt-save:disabled { opacity: 0.5; }
+.wisdom-link-btn:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
 
 /* ══════════════════════════════════════════════════════════════
    PAY BUTTON (mark as paid)

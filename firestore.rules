@@ -77,7 +77,7 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isValidRecord();
       allow update: if isAuthenticated()
         && request.resource.data.createdBy == resource.data.createdBy;
-      allow delete: if false;
+      allow delete: if isAuthenticated();
     }
 
     // ── Transactions Collection (Audit Log) ──
