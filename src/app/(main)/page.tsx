@@ -28,10 +28,11 @@ export default function DashboardPage() {
   const [expandedRecordId, setExpandedRecordId] = useState<string | null>(null);
 
   const otherName = useMemo(() => {
-    if (myName === "Num") return "Kaew";
-    if (myName === "Kaew") return "Num";
+    const idLower = profileId.toLowerCase();
+    if (idLower === "num") return "Kaew";
+    if (idLower === "kaew") return "Num";
     return "them";
-  }, [myName]);
+  }, [profileId]);
 
   const handleAmountChange = (val: string) => {
     // Only allow whole numbers
@@ -54,7 +55,7 @@ export default function DashboardPage() {
     setAddSaving(true);
     setAddError("");
 
-    const isKaew = myName === "Kaew";
+    const isKaew = profileId.toLowerCase() === "kaew";
     let recordType: "borrow" | "lend";
     let targetPerson: string;
     let defaultNote: string;
