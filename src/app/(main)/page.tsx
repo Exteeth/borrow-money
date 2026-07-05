@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime, formatBaht } from "@/lib/utils";
 import BalanceCircle from "@/components/BalanceCircle";
 import { useToast } from "@/context/ToastContext";
+import { sendDiscordNotification } from "@/lib/discord";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -94,6 +95,9 @@ export default function DashboardPage() {
         note: addNote.trim() || defaultNote,
         createdAt: new Date(),
       });
+
+      // Trigger Discord Webhook notification
+      sendDiscordNotification(profile.id, recordType, parsed, addNote.trim()).catch(() => {});
 
       setAddAmount("");
       setAddNote("");

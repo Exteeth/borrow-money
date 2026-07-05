@@ -7,6 +7,8 @@ import { collection, doc, setDoc } from "firebase/firestore";
 import MoneyForm, { type MoneyFormData } from "@/components/MoneyForm";
 import { useAuth } from "@/hooks/useAuth";
 
+import { sendDiscordNotification } from "@/lib/discord";
+
 export default function NewRecordPage() {
   const router = useRouter();
   const { profile } = useAuth();
@@ -40,6 +42,9 @@ export default function NewRecordPage() {
         note: data.description,
         createdAt: new Date(),
       });
+
+      // Trigger Discord Webhook Notification
+      sendDiscordNotification(profile.id, data.type, data.amount, data.description).catch(() => {});
 
       router.push("/");
     } catch (err) {
