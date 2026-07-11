@@ -675,19 +675,33 @@ code {
   margin-bottom: 18px;
 }
 .profile-avatar-lg {
-  width: 80px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
-  border: 3px solid;
+  border: 2px solid rgba(197, 160, 89, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
-  background: rgba(255, 255, 255, 0.8);
+  margin: 0 auto 16px;
+  background: radial-gradient(circle at top left, rgba(29, 30, 34, 0.95), rgba(11, 12, 14, 0.98));
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), 0 0 0 4px rgba(0, 0, 0, 0.45), inset 0 0 15px rgba(255, 255, 255, 0.05);
+  position: relative;
+  transition: all 0.3s ease;
+}
+.profile-avatar-lg::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid var(--profile-color, var(--accent-primary));
+  opacity: 0.5;
+  filter: drop-shadow(0 0 8px var(--profile-color, var(--accent-primary)));
+  pointer-events: none;
 }
 .profile-avatar-lg svg {
   width: 44px;
   height: 44px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
 }
 .profile-name-lg {
   font-size: 22px;

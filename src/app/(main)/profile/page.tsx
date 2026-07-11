@@ -35,14 +35,28 @@ export default function ProfilePage() {
     <div className="page-container">
       {/* Avatar Card */}
       <div className="glass profile-card">
-        <div className="profile-avatar-lg" style={{ borderColor: profile.color }}>
+        <div className="profile-avatar-lg" style={{ "--profile-color": profile.color, borderColor: "rgba(197, 160, 89, 0.35)" } as any}>
           {profile.avatarType === "male" ? (
-            <svg viewBox="0 0 24 24" fill="none" stroke={profile.color} strokeWidth="1.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#avatarGold)" strokeWidth="1.5">
+              <defs>
+                <linearGradient id="avatarGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f5e6c4" />
+                  <stop offset="50%" stop-color="#c5a059" />
+                  <stop offset="100%" stop-color="#9a7a35" />
+                </linearGradient>
+              </defs>
               <circle cx="12" cy="8" r="4" />
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             </svg>
           ) : (
-            <svg viewBox="0 0 24 24" fill="none" stroke={profile.color} strokeWidth="1.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="url(#avatarGold)" strokeWidth="1.5">
+              <defs>
+                <linearGradient id="avatarGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f5e6c4" />
+                  <stop offset="50%" stop-color="#c5a059" />
+                  <stop offset="100%" stop-color="#9a7a35" />
+                </linearGradient>
+              </defs>
               <circle cx="12" cy="8" r="4" />
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <path d="M12 12v5M9 14h6" />

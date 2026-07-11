@@ -78,16 +78,29 @@ export default function LoginPage() {
                 onClick={() => setSelectedProfile(prof.id)}
                 type="button"
               >
-                <div className="profile-avatar" style={{ borderColor: prof.color }}>
-                  {/* Male avatar SVG */}
+                <div className="profile-avatar" style={{ "--profile-color": prof.color, borderColor: "rgba(197, 160, 89, 0.35)" } as any}>
                   {prof.avatarType === "male" ? (
-                    <svg viewBox="0 0 24 24" fill="none" stroke={prof.color} strokeWidth="1.5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="url(#loginAvatarGold)" strokeWidth="1.5">
+                      <defs>
+                        <linearGradient id="loginAvatarGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stop-color="#f5e6c4" />
+                          <stop offset="50%" stop-color="#c5a059" />
+                          <stop offset="100%" stop-color="#9a7a35" />
+                        </linearGradient>
+                      </defs>
                       <circle cx="12" cy="8" r="4" />
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                     </svg>
                   ) : (
                     /* Female avatar SVG */
-                    <svg viewBox="0 0 24 24" fill="none" stroke={prof.color} strokeWidth="1.5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="url(#loginAvatarGold)" strokeWidth="1.5">
+                      <defs>
+                        <linearGradient id="loginAvatarGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stop-color="#f5e6c4" />
+                          <stop offset="50%" stop-color="#c5a059" />
+                          <stop offset="100%" stop-color="#9a7a35" />
+                        </linearGradient>
+                      </defs>
                       <circle cx="12" cy="8" r="4" />
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <path d="M12 12v5M9 14h6" />
@@ -226,19 +239,47 @@ export default function LoginPage() {
         }
 
         .profile-avatar {
-          width: 72px;
-          height: 72px;
+          width: 76px;
+          height: 76px;
           border-radius: 50%;
-          border: 3px solid;
+          border: 2px solid rgba(197, 160, 89, 0.35);
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(255, 255, 255, 0.8);
+          background: radial-gradient(circle at top left, rgba(29, 30, 34, 0.95), rgba(11, 12, 14, 0.98));
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.05);
+          position: relative;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .profile-avatar::after {
+          content: '';
+          position: absolute;
+          inset: -5px;
+          border-radius: 50%;
+          border: 1px solid var(--profile-color);
+          opacity: 0.35;
+          filter: drop-shadow(0 0 6px var(--profile-color));
+          pointer-events: none;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .profile-card:hover .profile-avatar {
+          transform: scale(1.05);
+          border-color: rgba(197, 160, 89, 0.65);
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.65), 0 0 0 4px rgba(0, 0, 0, 0.35), inset 0 0 15px rgba(255, 255, 255, 0.08);
+        }
+
+        .profile-card:hover .profile-avatar::after {
+          opacity: 0.75;
+          inset: -7px;
+          filter: drop-shadow(0 0 10px var(--profile-color));
         }
 
         .profile-avatar svg {
           width: 40px;
           height: 40px;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
         }
 
         .profile-name {
