@@ -61,18 +61,23 @@ export default function TransactionsPage() {
       {!isLoading && !error && filtered.length > 0 && (
         <div className="txn-list">
           {filtered.map((txn) => (
-            <div key={txn.id} className={`txn-card glass txn-${txn.action}`}>
+            <div key={txn.id} className={`txn-card txn-${txn.action}`}>
+              <div className={`txn-dot txn-${txn.action}`} />
               <div className="txn-left">
-                <div className={`txn-dot txn-${txn.action}`} />
                 <div className="txn-info">
                   <span className="txn-action">
                     {ACTION_LABELS[txn.action] ?? txn.action}
                   </span>
-                  <span className="txn-editor">by {txn.editedByName}</span>
+                  <span className="txn-editor">
+                    by <span className="txn-editor-badge">{txn.editedByName}</span>
+                  </span>
                 </div>
               </div>
               <div className="txn-right">
-                <span className="txn-amount">{formatBaht(txn.amount)}</span>
+                <span className="txn-amount">
+                  {txn.action === "delete" ? "-" : (txn.action === "decrease" ? "-" : "+")}
+                  {formatBaht(txn.amount)}
+                </span>
                 <span className="txn-balance">
                   {txn.action === "decrease"
                     ? `${formatBaht(txn.prevBalance)} → ${formatBaht(txn.newBalance)}`
