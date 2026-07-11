@@ -1,14 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import {
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
-  type QueryDocumentSnapshot,
-} from "firebase/firestore";
+import { useEffect, useState, useCallback } from "react";
 
 export interface Transaction {
   id: string;
@@ -28,55 +20,45 @@ export function useTransactions(recordId?: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setIsLoading(true);
-
-    let q = query(
-      collection(db, "transactions"),
-      orderBy("createdAt", "desc")
-    );
-
-    if (recordId) {
-      // Filter client-side since Firestore doesn't support compound queries easily
-      // In production, add a composite index on [recordId, createdAt]
-    }
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const items: Transaction[] = [];
-
-        snapshot.forEach((doc: QueryDocumentSnapshot) => {
-          const data = doc.data();
-
-          // Client-side filter if recordId is specified
-          if (recordId && data.recordId !== recordId) return;
-
-          items.push({
-            id: doc.id,
-            recordId: data.recordId as string,
-            action: data.action as Transaction["action"],
-            amount: data.amount as number,
-            prevBalance: data.prevBalance as number,
-            newBalance: data.newBalance as number,
-            editedBy: data.editedBy as string,
-            editedByName: data.editedByName as string,
-            note: (data.note as string) ?? "",
-            createdAt: data.createdAt?.toDate() ?? new Date(),
-          });
-        });
-
-        setTransactions(items);
-        setIsLoading(false);
-      },
-      (err: Error) => {
-        setError(err.message);
-        setIsLoading(false);
+  const fetchTransactions = useCallback(async () => {
+    try {
+      const url = recordId
+        ? `/api/transactions?recordId=${encodeURIComponent(recordId)}`
+        : "/api/transactions";
+      
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error("Failed to fetch transactions");
       }
-    );
 
-    return () => unsubscribe();
+      const { transactions: data } = await res.json() as { transactions: any[] };
+
+      const items: Transaction[] = (data || []).map((item: any) => ({
+        id: item.id,
+        recordId: item.record_id,
+        action: item.action as Transaction["action"],
+        amount: Number(item.amount),
+        prevBalance: Number(item.prev_balance),
+        newBalance: Number(item.new_balance),
+        editedBy: item.edited_by,
+        editedByName: item.edited_by_name,
+        note: item.note ?? "",
+        createdAt: new Date(item.created_at),
+      }));
+
+      setTransactions(items);
+      setError(null);
+    } catch (err: any) {
+      console.error("Transactions fetch error:", err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   }, [recordId]);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   return { transactions, isLoading, error };
 }

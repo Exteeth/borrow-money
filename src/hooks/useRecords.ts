@@ -1,15 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import {
-  collection,
-  query,
-  orderBy,
-  limit,
-  onSnapshot,
-  type QueryDocumentSnapshot,
-} from "firebase/firestore";
+import { useEffect, useState, useCallback } from "react";
 
 export interface Record {
   id: string;
@@ -29,61 +20,63 @@ export function useRecords(profileId: string, maxRecords = 20) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setIsLoading(true);
-
-    const q = query(
-      collection(db, "records"),
-      orderBy("createdAt", "desc"),
-      limit(maxRecords)
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const items: Record[] = [];
-        let net = 0;
-
-        snapshot.forEach((doc: QueryDocumentSnapshot) => {
-          const data = doc.data();
-          const record: Record = {
-            id: doc.id,
-            type: data.type as "borrow" | "lend",
-            personName: data.personName as string,
-            amount: data.amount as number,
-            currentBalance: data.currentBalance as number,
-            description: (data.description as string) ?? "",
-            billImageBase64: data.billImageBase64 as string | undefined,
-            createdBy: data.createdBy as string,
-            createdAt: data.createdAt?.toDate() ?? new Date(),
-          };
-
-          items.push(record);
-
-          // Calculate net from the current user's perspective
-          const isMine = record.createdBy === profileId;
-          if (record.type === "lend") {
-            // Someone lent money: if it was me, they owe me (+); if it was them, I owe (-)
-            net += isMine ? record.currentBalance : -record.currentBalance;
-          } else {
-            // Someone borrowed money: if it was me, I owe (-); if it was them, they owe me (+)
-            net += isMine ? -record.currentBalance : record.currentBalance;
-          }
-        });
-
-        setRecords(items);
-        setTotalOwed(net);
-        setIsLoading(false);
-      },
-      (err: Error) => {
-        console.error("Firestore listener error:", err);
-        setError(err.message);
-        setIsLoading(false);
+  const fetchRecords = useCallback(async () => {
+    if (!profileId) return;
+    try {
+      const res = await fetch("/api/records");
+      if (!res.ok) {
+        throw new Error("Failed to fetch records");
       }
-    );
+      const { records: data } = await res.json() as { records: any[] };
 
-    return () => unsubscribe();
+      const items: Record[] = (data || [])
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, maxRecords)
+        .map((item: any) => ({
+          id: item.id,
+          type: item.type as "borrow" | "lend",
+          personName: item.person_name,
+          amount: Number(item.amount),
+          currentBalance: Number(item.current_balance),
+          description: item.description ?? "",
+          billImageBase64: item.bill_image_base64 ?? undefined,
+          createdBy: item.created_by,
+          createdAt: new Date(item.created_at),
+        }));
+
+      // Calculate net from the current user's perspective
+      let net = 0;
+      items.forEach((record) => {
+        const isMine = record.createdBy === profileId;
+        if (record.type === "lend") {
+          // Someone lent money: if it was me, they owe me (+); if it was them, I owe (-)
+          net += isMine ? record.currentBalance : -record.currentBalance;
+        } else {
+          // Someone borrowed money: if it was me, I owe (-); if it was them, they owe me (+)
+          net += isMine ? -record.currentBalance : record.currentBalance;
+        }
+      });
+
+      setRecords(items);
+      setTotalOwed(net);
+      setError(null);
+    } catch (err: any) {
+      console.error("Records fetch error:", err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   }, [profileId, maxRecords]);
 
-  return { records, totalOwed, isLoading, error };
+  // Expose refetch for callers to use after mutations
+  const refetch = useCallback(() => {
+    fetchRecords();
+  }, [fetchRecords]);
+
+  useEffect(() => {
+    if (!profileId) return;
+    fetchRecords();
+  }, [profileId, fetchRecords]);
+
+  return { records, totalOwed, isLoading, error, refetch };
 }

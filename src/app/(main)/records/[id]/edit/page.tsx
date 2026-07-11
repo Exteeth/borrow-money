@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { doc, setDoc, updateDoc, collection } from "firebase/firestore";
 import MoneyForm, { type MoneyFormData } from "@/components/MoneyForm";
 import { useRecords } from "@/hooks/useRecords";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,27 +32,29 @@ export default function EditRecordPage() {
       const diff = data.amount - record.amount;
       const newBalance = Math.max(0, oldBalance + diff);
 
-      await updateDoc(doc(db, "records", recordId), {
-        amount: data.amount,
-        currentBalance: newBalance,
-        description: data.description,
+      const res = await fetch(`/api/records/${recordId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "edit",
+          amount: data.amount,
+          prevBalance: oldBalance,
+          newBalance,
+          description: data.description,
+          editedBy: profile.id,
+          editedByName: profile.name,
+          note: data.description,
+        }),
       });
 
-      // Write audit transaction
-      await setDoc(doc(db, "transactions", doc(collection(db, "transactions")).id), {
-        recordId,
-        action: "edit",
-        amount: data.amount,
-        prevBalance: oldBalance,
-        newBalance,
-        editedBy: profile.id,
-        editedByName: profile.name,
-        note: data.description,
-        createdAt: new Date(),
-      });
+      if (!res.ok) {
+        const resData = await res.json();
+        throw new Error(resData.error || "Update failed");
+      }
 
       router.push("/");
     } catch (err) {
+      console.error(err);
       alert("Failed to update record");
     } finally {
       setIsLoading(false);

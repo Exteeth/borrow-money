@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
-import { signInAnonymously } from "firebase/auth";
 import PinKeypad from "@/components/PinKeypad";
 
 // Placeholder profiles until Firestore is connected
@@ -18,12 +16,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Pre-sign into Firebase anonymously while user chooses profile + enters PIN
-  useEffect(() => {
-    signInAnonymously(auth).catch(() => {
-      // silently ignore — will retry after login
-    });
-  }, []);
+
 
   const profile = DEFAULT_PROFILES.find((p) => p.id === selectedProfile);
 

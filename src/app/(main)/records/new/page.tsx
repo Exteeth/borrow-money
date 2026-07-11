@@ -2,11 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { collection, doc, setDoc } from "firebase/firestore";
 import MoneyForm, { type MoneyFormData } from "@/components/MoneyForm";
 import { useAuth } from "@/hooks/useAuth";
-
 import { sendDiscordNotification } from "@/lib/discord";
 
 export default function NewRecordPage() {
@@ -18,30 +15,23 @@ export default function NewRecordPage() {
     if (!profile) return;
     setIsLoading(true);
     try {
-      const txnId = doc(collection(db, "records")).id;
-
-      await setDoc(doc(db, "records", txnId), {
-        type: data.type,
-        personName: data.personName,
-        amount: data.amount,
-        currentBalance: data.amount,
-        description: data.description,
-        createdBy: profile.id,
-        createdAt: new Date(),
+      const res = await fetch("/api/records", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: data.type,
+          personName: data.personName,
+          amount: data.amount,
+          description: data.description,
+          createdBy: profile.id,
+          createdByName: profile.name,
+        }),
       });
 
-      // Write audit transaction
-      await setDoc(doc(db, "transactions", doc(collection(db, "transactions")).id), {
-        recordId: txnId,
-        action: "create",
-        amount: data.amount,
-        prevBalance: 0,
-        newBalance: data.amount,
-        editedBy: profile.id,
-        editedByName: profile.name,
-        note: data.description,
-        createdAt: new Date(),
-      });
+      if (!res.ok) {
+        const resData = await res.json();
+        throw new Error(resData.error || "Insert failed");
+      }
 
       // Trigger Discord Webhook Notification
       sendDiscordNotification(profile.id, data.type, data.amount, data.description).catch(() => {});

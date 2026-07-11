@@ -1,24 +1,8 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { setSessionCookie, clearSessionCookie } from "@/lib/auth";
-import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { pinSchema } from "@/lib/validators";
-
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-function getDb() {
-  const apps = getApps();
-  if (apps.length && apps[0]) return getFirestore(apps[0]);
-  return getFirestore(initializeApp(firebaseConfig));
-}
 
 const MAX_PIN_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 30;
@@ -49,20 +33,23 @@ export async function POST(request: Request) {
       lockoutMap.delete(profileId);
     }
 
-    // Read profile from Firestore
-    const db = getDb();
-    const profileSnap = await getDoc(doc(db, "profiles", profileId));
+    // Read profile from Supabase
+    const supabase = getSupabaseAdmin();
+    const { data: profile, error: dbError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", profileId)
+      .single();
 
-    if (!profileSnap.exists()) {
+    if (dbError || !profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    const profile = profileSnap.data();
-    if (!profile?.pin) {
+    if (!profile.pin) {
       return NextResponse.json({ error: "Profile data is invalid" }, { status: 500 });
     }
 
-    const isValid = await bcrypt.compare(pin, profile.pin as string);
+    const isValid = await bcrypt.compare(pin, profile.pin);
 
     if (!isValid) {
       const currentCount = (lockout?.count ?? 0) + 1;
@@ -88,8 +75,8 @@ export async function POST(request: Request) {
     await setSessionCookie({
       uid: profileId,
       profileId,
-      profileName: profile.name as string,
-      deviceId: (profile.deviceId as string) ?? "unknown",
+      profileName: profile.name,
+      deviceId: profile.device_id ?? "unknown",
     });
 
     return NextResponse.json({
@@ -97,7 +84,7 @@ export async function POST(request: Request) {
       profile: {
         id: profileId,
         name: profile.name,
-        avatarType: profile.avatarType,
+        avatarType: profile.avatar_type,
         color: profile.color,
       },
     });

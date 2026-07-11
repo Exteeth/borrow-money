@@ -2,8 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { doc, setDoc, updateDoc, deleteDoc, collection } from "firebase/firestore";
 import { useRecords, type Record } from "@/hooks/useRecords";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime, formatBaht } from "@/lib/utils";
@@ -16,7 +14,7 @@ export default function DashboardPage() {
   const { profile } = useAuth();
   const profileId = profile?.id ?? "";
   const myName = profile?.name ?? "";
-  const { records, totalOwed, isLoading, error } = useRecords(profileId);
+  const { records, totalOwed, isLoading, error, refetch } = useRecords(profileId);
   const { addToast } = useToast();
 
   // Quick Add state
@@ -72,37 +70,35 @@ export default function DashboardPage() {
     }
 
     try {
-      const recordId = doc(collection(db, "records")).id;
-      
-      await setDoc(doc(db, "records", recordId), {
-        type: recordType,
-        personName: targetPerson,
-        amount: parsed,
-        currentBalance: parsed,
-        description: addNote.trim(),
-        createdBy: profile.id,
-        createdAt: new Date(),
+      const res = await fetch("/api/records", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: recordType,
+          personName: targetPerson,
+          amount: parsed,
+          description: addNote.trim() || defaultNote,
+          createdBy: profile.id,
+          createdByName: profile.name,
+        }),
       });
 
-      await setDoc(doc(db, "transactions", doc(collection(db, "transactions")).id), {
-        recordId,
-        action: "create",
-        amount: parsed,
-        prevBalance: 0,
-        newBalance: parsed,
-        editedBy: profile.id,
-        editedByName: profile.name,
-        note: addNote.trim() || defaultNote,
-        createdAt: new Date(),
-      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Insert failed");
+      }
 
       // Trigger Discord Webhook notification
       sendDiscordNotification(profile.id, recordType, parsed, addNote.trim()).catch(() => {});
 
+      // Refresh records to update balance
+      refetch();
+
       setAddAmount("");
       setAddNote("");
       addToast(actionType === "debt" ? "บันทึกข้อมูลการยืมสำเร็จ" : "บันทึกข้อมูลการคืนเงินสำเร็จ", "success");
-    } catch {
+    } catch (err: any) {
+      console.error(err);
       setAddError("ล้มเหลวในการบันทึกข้อมูล");
       addToast("ล้มเหลวในการบันทึกข้อมูล", "error");
     } finally {
@@ -113,22 +109,31 @@ export default function DashboardPage() {
   const handlePayback = async (record: Record) => {
     if (!profile || record.currentBalance <= 0) return;
     try {
-      const newBalance = 0;
-      await updateDoc(doc(db, "records", record.id), { currentBalance: newBalance });
-      await setDoc(doc(db, "transactions", doc(collection(db, "transactions")).id), {
-        recordId: record.id,
-        action: "decrease",
-        amount: record.currentBalance,
-        prevBalance: record.currentBalance,
-        newBalance,
-        editedBy: profile.id,
-        editedByName: profile.name,
-        note: "จ่ายคืนแล้ว (ทั้งหมด)",
-        createdAt: new Date(),
+      const res = await fetch(`/api/records/${record.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "payback",
+          prevBalance: record.currentBalance,
+          newBalance: 0,
+          editedBy: profile.id,
+          editedByName: profile.name,
+          note: "จ่ายคืนแล้ว (ทั้งหมด)",
+        }),
       });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Update failed");
+      }
+
+      // Refresh records to update balance
+      refetch();
+
       addToast("บันทึกข้อมูลคืนเงินสำเร็จ", "success");
       setExpandedRecordId(null);
-    } catch {
+    } catch (err: any) {
+      console.error(err);
       addToast("ล้มเหลวในการบันทึกข้อมูลคืนเงิน", "error");
     }
   };
@@ -137,21 +142,22 @@ export default function DashboardPage() {
     if (!profile) return;
     if (!window.confirm("ต้องการลบรายการนี้ใช่หรือไม่? (ข้อมูลนี้จะหายไปจากประวัติทันที)")) return;
     try {
-      await deleteDoc(doc(db, "records", recordId));
-      await setDoc(doc(db, "transactions", doc(collection(db, "transactions")).id), {
-        recordId,
-        action: "delete",
-        amount: 0,
-        prevBalance: 0,
-        newBalance: 0,
-        editedBy: profile.id,
-        editedByName: profile.name,
-        note: "ลบรายการธุรกรรม",
-        createdAt: new Date(),
+      const res = await fetch(`/api/records/${recordId}`, {
+        method: "DELETE",
       });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Delete failed");
+      }
+
+      // Refresh records to update balance
+      refetch();
+
       addToast("ลบรายการธุรกรรมสำเร็จ", "success");
       setExpandedRecordId(null);
-    } catch {
+    } catch (err: any) {
+      console.error(err);
       addToast("ล้มเหลวในการลบรายการธุรกรรม", "error");
     }
   };

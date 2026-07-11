@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { db } from "@/lib/firebase";
-import { doc, setDoc, updateDoc, collection } from "firebase/firestore";
 import { formatBaht } from "@/lib/utils";
 import { useRecords } from "@/hooks/useRecords";
 import { useAuth } from "@/hooks/useAuth";
@@ -55,25 +53,28 @@ export default function DecreaseRecordPage() {
     try {
       const newBalance = currentBalance - parsedAmount;
 
-      await updateDoc(doc(db, "records", recordId), {
-        currentBalance: newBalance,
+      const res = await fetch(`/api/records/${recordId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "decrease",
+          amount: parsedAmount,
+          prevBalance: currentBalance,
+          newBalance,
+          editedBy: profile.id,
+          editedByName: profile.name,
+          note: `Paid back ฿${parsedAmount.toLocaleString("th-TH")}`,
+        }),
       });
 
-      // Write audit transaction
-      await setDoc(doc(db, "transactions", doc(collection(db, "transactions")).id), {
-        recordId,
-        action: "decrease",
-        amount: parsedAmount,
-        prevBalance: currentBalance,
-        newBalance,
-        editedBy: profile.id,
-        editedByName: profile.name,
-        note: `Paid back ฿${parsedAmount.toLocaleString("th-TH")}`,
-        createdAt: new Date(),
-      });
+      if (!res.ok) {
+        const resData = await res.json();
+        throw new Error(resData.error || "Update failed");
+      }
 
       router.push("/");
-    } catch {
+    } catch (err: any) {
+      console.error(err);
       setError("Network error. Please try again.");
     } finally {
       setIsLoading(false);
