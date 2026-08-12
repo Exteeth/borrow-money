@@ -40,9 +40,9 @@ export default function ProfilePage() {
             <svg viewBox="0 0 24 24" fill="none" stroke="url(#avatarGold)" strokeWidth="1.5">
               <defs>
                 <linearGradient id="avatarGold" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#f5e6c4" />
-                  <stop offset="50%" stop-color="#c5a059" />
-                  <stop offset="100%" stop-color="#9a7a35" />
+                  <stop offset="0%" stopColor="#f5e6c4" />
+                  <stop offset="50%" stopColor="#c5a059" />
+                  <stop offset="100%" stopColor="#9a7a35" />
                 </linearGradient>
               </defs>
               <circle cx="12" cy="8" r="4" />
@@ -52,9 +52,9 @@ export default function ProfilePage() {
             <svg viewBox="0 0 24 24" fill="none" stroke="url(#avatarGold)" strokeWidth="1.5">
               <defs>
                 <linearGradient id="avatarGold" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#f5e6c4" />
-                  <stop offset="50%" stop-color="#c5a059" />
-                  <stop offset="100%" stop-color="#9a7a35" />
+                  <stop offset="0%" stopColor="#f5e6c4" />
+                  <stop offset="50%" stopColor="#c5a059" />
+                  <stop offset="100%" stopColor="#9a7a35" />
                 </linearGradient>
               </defs>
               <circle cx="12" cy="8" r="4" />

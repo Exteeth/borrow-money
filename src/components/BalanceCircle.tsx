@@ -8,8 +8,13 @@ interface BalanceCircleProps {
 }
 
 export default function BalanceCircle({ totalOwed, otherPersonName }: BalanceCircleProps) {
+  const [mounted, setMounted] = useState(false);
   const [displayAmount, setDisplayAmount] = useState(0);
   const animRef = useRef<number>(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isPositive = totalOwed >= 0;
   const person = otherPersonName || "they";
@@ -19,6 +24,7 @@ export default function BalanceCircle({ totalOwed, otherPersonName }: BalanceCir
 
   // Animate the counter with slow elegant easing
   useEffect(() => {
+    if (!mounted) return;
     const target = totalOwed;
     let start: number | null = null;
     const duration = 1200;
@@ -37,11 +43,16 @@ export default function BalanceCircle({ totalOwed, otherPersonName }: BalanceCir
 
     animRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animRef.current);
-  }, [totalOwed]);
+  }, [totalOwed, mounted]);
 
   return (
     <div className="wisdom-card-wrapper">
       <div className="wisdom-card">
+        {/* Watermark image background */}
+        <div className="wisdom-card-bg-watermark">
+          <img src="/numkaew.png" alt="Num & Kaew Watermark" />
+        </div>
+
         {/* Luxury Gold Reflection & Pattern */}
         <div className="wisdom-card-pattern" />
         <div className="wisdom-card-glow" />
@@ -50,9 +61,14 @@ export default function BalanceCircle({ totalOwed, otherPersonName }: BalanceCir
         <div className="wisdom-card-header">
           <div className="wisdom-card-brand-group">
             <span className="wisdom-card-brand">THE WISDOM</span>
-            <span className="wisdom-card-type">PRIVATE DEBT</span>
+            <span className="wisdom-card-type">PRIVATE DEBT & LOAN</span>
           </div>
-          <div className="wisdom-card-chip" />
+          <div className="wisdom-card-header-right">
+            <div className="wisdom-card-avatar-badge">
+              <img src="/numkaew.png" alt="Num & Kaew" />
+            </div>
+            <div className="wisdom-card-chip" />
+          </div>
         </div>
 
         {/* Card Balance */}

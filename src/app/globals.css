@@ -1172,15 +1172,15 @@ code {
 }
 .wisdom-card {
   width: 100%;
-  max-width: 350px;
-  height: 200px;
+  max-width: 400px;
+  height: 215px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, #18191d 0%, #080809 100%);
-  border: 1.5px solid rgba(197, 160, 89, 0.35);
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85), 0 0 35px rgba(197, 160, 89, 0.05), inset 0 0 15px rgba(197, 160, 89, 0.08);
+  background: linear-gradient(135deg, #191a1e 0%, #090a0c 100%);
+  border: 1.5px solid rgba(197, 160, 89, 0.4);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85), 0 0 35px rgba(197, 160, 89, 0.06), inset 0 0 15px rgba(197, 160, 89, 0.08);
   position: relative;
   overflow: hidden;
-  padding: 24px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1190,8 +1190,30 @@ code {
 }
 .wisdom-card:hover {
   transform: translateY(-6px) rotateX(4deg) rotateY(-2deg);
-  border-color: rgba(197, 160, 89, 0.55);
-  box-shadow: 0 28px 50px rgba(0, 0, 0, 0.95), 0 0 45px rgba(197, 160, 89, 0.08), inset 0 0 20px rgba(197, 160, 89, 0.12);
+  border-color: rgba(197, 160, 89, 0.65);
+  box-shadow: 0 28px 55px rgba(0, 0, 0, 0.95), 0 0 45px rgba(197, 160, 89, 0.12), inset 0 0 20px rgba(197, 160, 89, 0.15);
+}
+.wisdom-card-bg-watermark {
+  position: absolute;
+  right: -25px;
+  bottom: -25px;
+  width: 200px;
+  height: 200px;
+  opacity: 0.16;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: luminosity;
+  filter: contrast(1.2) brightness(1.1) drop-shadow(0 0 12px rgba(197, 160, 89, 0.4));
+  transition: opacity 0.4s ease;
+}
+.wisdom-card:hover .wisdom-card-bg-watermark {
+  opacity: 0.25;
+}
+.wisdom-card-bg-watermark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 .wisdom-card-pattern {
   position: absolute;
@@ -1218,8 +1240,35 @@ code {
 .wisdom-card-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   z-index: 2;
+}
+.wisdom-card-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wisdom-card-avatar-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(197, 160, 89, 0.75);
+  box-shadow: 0 0 12px rgba(197, 160, 89, 0.4), inset 0 0 4px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  position: relative;
+  background: #0b0c0e;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+.wisdom-card:hover .wisdom-card-avatar-badge {
+  transform: scale(1.08);
+  border-color: rgba(226, 194, 134, 0.95);
+  box-shadow: 0 0 18px rgba(197, 160, 89, 0.6), inset 0 0 4px rgba(0, 0, 0, 0.6);
+}
+.wisdom-card-avatar-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .wisdom-card-brand-group {
   display: flex;
@@ -1241,8 +1290,8 @@ code {
   margin-top: 1px;
 }
 .wisdom-card-chip {
-  width: 36px;
-  height: 26px;
+  width: 34px;
+  height: 25px;
   border-radius: 4px;
   background: linear-gradient(135deg, #f3e5ab 0%, #c5a059 40%, #c5a059 70%, #8c6c2b 100%);
   position: relative;

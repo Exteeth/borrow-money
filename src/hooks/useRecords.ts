@@ -29,25 +29,22 @@ export function useRecords(profileId: string, maxRecords = 20) {
       }
       const { records: data } = await res.json() as { records: any[] };
 
-      const items: Record[] = (data || [])
-        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, maxRecords)
-        .map((item: any) => ({
-          id: item.id,
-          type: item.type as "borrow" | "lend",
-          personName: item.person_name,
-          amount: Number(item.amount),
-          currentBalance: Number(item.current_balance),
-          description: item.description ?? "",
-          billImageBase64: item.bill_image_base64 ?? undefined,
-          createdBy: item.created_by,
-          createdAt: new Date(item.created_at),
-        }));
+      const allItems: Record[] = (data || []).map((item: any) => ({
+        id: item.id,
+        type: item.type as "borrow" | "lend",
+        personName: item.person_name,
+        amount: Number(item.amount),
+        currentBalance: Number(item.current_balance),
+        description: item.description ?? "",
+        billImageBase64: item.bill_image_base64 ?? undefined,
+        createdBy: item.created_by,
+        createdAt: new Date(item.created_at),
+      }));
 
-      // Calculate net from the current user's perspective
+      // Calculate net from the current user's perspective across ALL records
       let net = 0;
-      items.forEach((record) => {
-        const isMine = record.createdBy === profileId;
+      allItems.forEach((record) => {
+        const isMine = (record.createdBy || "").toLowerCase() === (profileId || "").toLowerCase();
         if (record.type === "lend") {
           // Someone lent money: if it was me, they owe me (+); if it was them, I owe (-)
           net += isMine ? record.currentBalance : -record.currentBalance;
@@ -57,7 +54,11 @@ export function useRecords(profileId: string, maxRecords = 20) {
         }
       });
 
-      setRecords(items);
+      const displayRecords = allItems
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, maxRecords);
+
+      setRecords(displayRecords);
       setTotalOwed(net);
       setError(null);
     } catch (err: any) {
