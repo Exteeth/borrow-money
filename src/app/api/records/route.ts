@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { getSessionCookie } from "@/lib/auth";
+import { sendDiscordNotification } from "@/lib/discord";
 
 // GET /api/records — Fetch all records
 export async function GET() {
@@ -76,6 +77,11 @@ export async function POST(request: NextRequest) {
       });
 
     if (txError) throw txError;
+
+    // Send Discord notification asynchronously from server side
+    sendDiscordNotification(body.createdBy, body.type, body.amount, body.description).catch((err) => {
+      console.error("Failed to send Discord notification:", err);
+    });
 
     return NextResponse.json({ success: true, record: insertedRecord });
   } catch (err: unknown) {

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import MoneyForm, { type MoneyFormData } from "@/components/MoneyForm";
 import { useAuth } from "@/hooks/useAuth";
-import { sendDiscordNotification } from "@/lib/discord";
 
 export default function NewRecordPage() {
   const router = useRouter();
@@ -32,9 +31,6 @@ export default function NewRecordPage() {
         const resData = await res.json();
         throw new Error(resData.error || "Insert failed");
       }
-
-      // Trigger Discord Webhook Notification
-      sendDiscordNotification(profile.id, data.type, data.amount, data.description).catch(() => {});
 
       router.push("/");
     } catch (err) {

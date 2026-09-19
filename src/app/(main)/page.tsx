@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime, formatBaht } from "@/lib/utils";
 import BalanceCircle from "@/components/BalanceCircle";
 import { useToast } from "@/context/ToastContext";
-import { sendDiscordNotification } from "@/lib/discord";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -87,9 +86,6 @@ export default function DashboardPage() {
         const data = await res.json();
         throw new Error(data.error || "Insert failed");
       }
-
-      // Trigger Discord Webhook notification
-      sendDiscordNotification(profile.id, recordType, parsed, addNote.trim()).catch(() => {});
 
       // Refresh records to update balance
       refetch();

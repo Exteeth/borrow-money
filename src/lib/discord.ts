@@ -1,4 +1,4 @@
-const DISCORD_WEBHOOK_URL = "https://discordapp.com/api/webhooks/1523351990447640678/GUFYlYykDDNscMC1WX4xpoyb-nDSx6jGDqiEevK8qU-mhEwuausCAsPNlOBERmsRUMh5";
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
 export async function sendDiscordNotification(
   createdBy: string,
@@ -7,6 +7,11 @@ export async function sendDiscordNotification(
   description: string
 ) {
   try {
+    if (!DISCORD_WEBHOOK_URL) {
+      console.warn("DISCORD_WEBHOOK_URL is not set in environment variables.");
+      return;
+    }
+
     const creatorName = createdBy.toLowerCase() === "num" ? "Num" : (createdBy.toLowerCase() === "kaew" ? "Kaew" : createdBy);
     const formattedAmount = amount.toLocaleString("th-TH");
     
