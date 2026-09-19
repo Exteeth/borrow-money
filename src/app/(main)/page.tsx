@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime, formatBaht } from "@/lib/utils";
 import BalanceCircle from "@/components/BalanceCircle";
 import { useToast } from "@/context/ToastContext";
+import CategoryChips from "@/components/CategoryChips";
+import { formatCategoryNote, parseCategoryNote, DEFAULT_CATEGORY_ID } from "@/lib/categories";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -19,6 +21,7 @@ export default function DashboardPage() {
   // Quick Add state
   const [addAmount, setAddAmount] = useState("");
   const [addNote, setAddNote] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>(DEFAULT_CATEGORY_ID);
   const [addSaving, setAddSaving] = useState(false);
   const [addError, setAddError] = useState("");
 
@@ -29,13 +32,14 @@ export default function DashboardPage() {
     const idLower = profileId.toLowerCase();
     if (idLower === "num") return "Kaew";
     if (idLower === "kaew") return "Num";
-    return "them";
+    return "Other";
   }, [profileId]);
 
   const handleAmountChange = (val: string) => {
     // Only allow whole numbers
-    setAddAmount(val.replace(/[^0-9]/g, ""));
-    setAddError("");
+    const clean = val.replace(/[^0-9]/g, "");
+    setAddAmount(clean);
+    if (addError) setAddError("");
   };
 
   const handleQuickAdd = async (actionType: "debt" | "payback") => {
@@ -68,6 +72,8 @@ export default function DashboardPage() {
       defaultNote = isKaew ? "ได้รับเงินคืนจาก Num" : "คืนเงินให้แก้ว";
     }
 
+    const finalDescription = formatCategoryNote(selectedCategory, addNote.trim() || defaultNote);
+
     try {
       const res = await fetch("/api/records", {
         method: "POST",
@@ -76,7 +82,7 @@ export default function DashboardPage() {
           type: recordType,
           personName: targetPerson,
           amount: parsed,
-          description: addNote.trim() || defaultNote,
+          description: finalDescription,
           createdBy: profile.id,
           createdByName: profile.name,
         }),
@@ -92,6 +98,7 @@ export default function DashboardPage() {
 
       setAddAmount("");
       setAddNote("");
+      setSelectedCategory(DEFAULT_CATEGORY_ID);
       addToast(actionType === "debt" ? "บันทึกข้อมูลการยืมสำเร็จ" : "บันทึกข้อมูลการคืนเงินสำเร็จ", "success");
     } catch (err: any) {
       console.error(err);
@@ -182,6 +189,13 @@ export default function DashboardPage() {
           />
         </div>
         
+        {/* Category Chips Selector */}
+        <CategoryChips
+          selectedCategoryId={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          disabled={addSaving}
+        />
+
         <input
           className="wisdom-note-input"
           type="text"
@@ -225,6 +239,7 @@ export default function DashboardPage() {
               const isBorrow = r.type === "borrow";
               const isPaidOff = r.currentBalance === 0;
               const isExpanded = expandedRecordId === r.id;
+              const { category, cleanNote } = parseCategoryNote(r.description);
               
               return (
                 <div 
@@ -237,15 +252,20 @@ export default function DashboardPage() {
                   >
                     <div className="activity-left">
                       <div className={`activity-icon ${isBorrow ? "borrow" : "lend"}`}>
-                        {isBorrow ? "↓" : "↑"}
+                        {category.id !== "other" ? category.emoji : (isBorrow ? "↓" : "↑")}
                       </div>
                       <div className="activity-info">
-                        <span className="activity-name">
-                          {isBorrow ? `${r.personName} (ยืม)` : `${r.personName} (ให้ยืม)`}
-                        </span>
+                        <div className="activity-title-row">
+                          <span className="activity-name">
+                            {isBorrow ? `${r.personName} (ยืม)` : `${r.personName} (ให้ยืม)`}
+                          </span>
+                          <span className="activity-category-badge">
+                            {category.emoji} {category.shortLabel}
+                          </span>
+                        </div>
                         <span className="activity-time">
                           {formatRelativeTime(r.createdAt)}
-                          {r.description && ` • ${r.description}`}
+                          {cleanNote && ` • ${cleanNote}`}
                         </span>
                       </div>
                     </div>

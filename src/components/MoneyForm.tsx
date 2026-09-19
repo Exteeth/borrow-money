@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import CategoryChips from "@/components/CategoryChips";
+import { formatCategoryNote, parseCategoryNote, DEFAULT_CATEGORY_ID } from "@/lib/categories";
 
 export interface MoneyFormData {
   personName: string;
@@ -22,10 +24,14 @@ export default function MoneyForm({
   isLoading = false,
   submitLabel = "Save",
 }: MoneyFormProps) {
+  const parsedInitial = parseCategoryNote(initialData?.description);
   const [personName, setPersonName] = useState(initialData?.personName ?? "");
   const [amount, setAmount] = useState(initialData?.amount?.toString() ?? "");
   const [type, setType] = useState<"borrow" | "lend">(initialData?.type ?? "borrow");
-  const [description, setDescription] = useState(initialData?.description ?? "");
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    parsedInitial.category.id !== "other" ? parsedInitial.category.id : DEFAULT_CATEGORY_ID
+  );
+  const [description, setDescription] = useState(parsedInitial.cleanNote);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
@@ -54,11 +60,13 @@ export default function MoneyForm({
       return;
     }
 
+    const finalDescription = formatCategoryNote(selectedCategory, description.trim());
+
     await onSubmit({
       personName: personName.trim(),
       amount: parsedAmount,
       type,
-      description: description.trim(),
+      description: finalDescription,
     });
   };
 
@@ -120,6 +128,16 @@ export default function MoneyForm({
           placeholder="0"
           min="1"
           max="99999999"
+          disabled={isLoading}
+        />
+      </div>
+
+      {/* Category */}
+      <div className="form-field">
+        <label>Category</label>
+        <CategoryChips
+          selectedCategoryId={selectedCategory}
+          onSelectCategory={setSelectedCategory}
           disabled={isLoading}
         />
       </div>

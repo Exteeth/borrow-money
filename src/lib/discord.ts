@@ -1,3 +1,5 @@
+import { parseCategoryNote } from "@/lib/categories";
+
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
 export async function sendDiscordNotification(
@@ -14,6 +16,7 @@ export async function sendDiscordNotification(
 
     const creatorName = createdBy.toLowerCase() === "num" ? "Num" : (createdBy.toLowerCase() === "kaew" ? "Kaew" : createdBy);
     const formattedAmount = amount.toLocaleString("th-TH");
+    const { category, cleanNote } = parseCategoryNote(description);
     
     let title = "";
     let color = 0x000000;
@@ -42,8 +45,12 @@ export async function sendDiscordNotification(
       }
     }
 
-    if (description.trim()) {
-      descriptionText += `\n\n**บันทึกเพิ่มเติม:** ${description}`;
+    if (category.id !== "other") {
+      descriptionText += `\n**หมวดหมู่:** ${category.emoji} ${category.name}`;
+    }
+
+    if (cleanNote) {
+      descriptionText += `\n**บันทึกเพิ่มเติม:** ${cleanNote}`;
     }
 
     const payload = {
