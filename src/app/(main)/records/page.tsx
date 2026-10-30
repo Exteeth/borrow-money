@@ -4,12 +4,13 @@ import { useRouter } from "next/navigation";
 import { useRecords } from "@/hooks/useRecords";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime, formatBaht } from "@/lib/utils";
-import { parseCategoryNote } from "@/lib/categories";
+import { parseCategoryNote, isPaybackRecord } from "@/lib/categories";
 
 export default function RecordsListPage() {
   const router = useRouter();
   const { profile } = useAuth();
-  const { records, isLoading, error } = useRecords(profile?.id ?? "", 50);
+  const profileId = profile?.id ?? "";
+  const { records, isLoading, error } = useRecords(profileId, 50);
 
   return (
     <div className="page-container">
@@ -39,26 +40,41 @@ export default function RecordsListPage() {
       {!isLoading && !error && records.length > 0 && (
         <div className="activity-list">
           {records.map((record) => {
+            const isPayback = isPaybackRecord(record.description, record.type, record.createdBy);
             const isBorrow = record.type === "borrow";
-            const isPaidOff = record.currentBalance === 0;
             const { category, cleanNote } = parseCategoryNote(record.description);
+
+            let displayName = "";
+            if (isPayback) {
+              if (profileId.toLowerCase() === "num") {
+                displayName = record.createdBy?.toLowerCase() === "num" ? "💸 โอนคืนแก้วแล้ว" : "💸 แก้วบันทึกได้รับเงินคืน";
+              } else {
+                displayName = record.createdBy?.toLowerCase() === "kaew" ? "💸 ได้รับเงินคืนจาก Num" : "💸 Num โอนคืนแล้ว";
+              }
+            } else {
+              if (profileId.toLowerCase() === "num") {
+                displayName = record.createdBy?.toLowerCase() === "num" ? "ยืมเงินจากแก้ว" : "แก้วจ่ายให้";
+              } else {
+                displayName = record.createdBy?.toLowerCase() === "kaew" ? "จ่ายให้ Num" : "Num ยืมเงิน";
+              }
+            }
 
             return (
               <div
                 key={record.id}
-                className={`activity-card glass ${isPaidOff ? "paid-off" : ""}`}
+                className={`activity-card glass ${isPayback ? "payback-card" : ""}`}
                 onClick={() => router.push(`/records/${record.id}/edit`)}
                 style={{ cursor: "pointer" }}
               >
                 <div className="activity-left">
-                  <div className={`activity-icon ${isBorrow ? "borrow" : "lend"}`}>
-                    {category.id !== "other" ? category.emoji : (isBorrow ? "↓" : "↑")}
+                  <div className={`activity-icon ${isPayback ? "payback" : (isBorrow ? "borrow" : "lend")}`}>
+                    {isPayback ? "💸" : (category.id !== "other" ? category.emoji : (isBorrow ? "↓" : "↑"))}
                   </div>
                   <div className="activity-info">
                     <div className="activity-title-row">
-                      <span className="activity-name">{record.personName}</span>
-                      <span className="activity-category-badge">
-                        {category.emoji} {category.shortLabel}
+                      <span className="activity-name">{displayName}</span>
+                      <span className={`activity-category-badge ${isPayback ? "payback" : ""}`}>
+                        {isPayback ? "💸 คืนเงิน" : `${category.emoji} ${category.shortLabel}`}
                       </span>
                     </div>
                     <span className="activity-time">
@@ -68,12 +84,9 @@ export default function RecordsListPage() {
                   </div>
                 </div>
                 <div className="activity-right">
-                  <span className={`activity-amount ${isBorrow ? "borrow" : "lend"}`}>
-                    {isBorrow ? "-" : "+"}{formatBaht(record.amount)}
+                  <span className={`activity-amount ${isPayback ? "payback" : (isBorrow ? "borrow" : "lend")}`}>
+                    {isPayback ? `+${formatBaht(record.amount)}` : (isBorrow ? `-${formatBaht(record.amount)}` : `+${formatBaht(record.amount)}`)}
                   </span>
-                  {!isPaidOff && record.currentBalance !== record.amount && (
-                    <span className="activity-balance">Remaining: {formatBaht(record.currentBalance)}</span>
-                  )}
                 </div>
               </div>
             );

@@ -80,9 +80,9 @@ export default function LoginPage() {
               >
                 <div className="profile-avatar" style={{ "--profile-color": prof.color, borderColor: "rgba(197, 160, 89, 0.35)" } as any}>
                   {prof.avatarType === "male" ? (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="url(#loginAvatarGold)" strokeWidth="1.5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke={`url(#loginAvatarGold-${prof.id})`} strokeWidth="1.5">
                       <defs>
-                        <linearGradient id="loginAvatarGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <linearGradient id={`loginAvatarGold-${prof.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
                           <stop offset="0%" stopColor="#f5e6c4" />
                           <stop offset="50%" stopColor="#c5a059" />
                           <stop offset="100%" stopColor="#9a7a35" />
@@ -93,9 +93,9 @@ export default function LoginPage() {
                     </svg>
                   ) : (
                     /* Female avatar SVG */
-                    <svg viewBox="0 0 24 24" fill="none" stroke="url(#loginAvatarGold)" strokeWidth="1.5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke={`url(#loginAvatarGold-${prof.id})`} strokeWidth="1.5">
                       <defs>
-                        <linearGradient id="loginAvatarGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <linearGradient id={`loginAvatarGold-${prof.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
                           <stop offset="0%" stopColor="#f5e6c4" />
                           <stop offset="50%" stopColor="#c5a059" />
                           <stop offset="100%" stopColor="#9a7a35" />

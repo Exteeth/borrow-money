@@ -1,4 +1,4 @@
-import { parseCategoryNote } from "@/lib/categories";
+import { parseCategoryNote, isPaybackRecord } from "@/lib/categories";
 
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
@@ -17,31 +17,29 @@ export async function sendDiscordNotification(
     const creatorName = createdBy.toLowerCase() === "num" ? "Num" : (createdBy.toLowerCase() === "kaew" ? "Kaew" : createdBy);
     const formattedAmount = amount.toLocaleString("th-TH");
     const { category, cleanNote } = parseCategoryNote(description);
+    const isPayback = isPaybackRecord(description, type, createdBy);
     
     let title = "";
     let color = 0x000000;
     let descriptionText = "";
 
-    if (type === "borrow") {
+    if (isPayback) {
+      color = 0x10b981; // Luxury Emerald Green
       if (creatorName === "Num") {
-        title = "🔴 Num ได้บันทึกการยืมเงิน";
-        descriptionText = `**Num** ยืมเงินจาก **Kaew** เป็นจำนวน **฿${formattedAmount}**`;
-        color = 0xc87a68; // Muted terracotta red
+        title = "💸 Num ได้บันทึกการคืนเงิน";
+        descriptionText = `**Num** ได้คืนเงินให้ **Kaew** เป็นจำนวน **฿${formattedAmount}**`;
       } else {
-        title = "🟢 Kaew ได้บันทึกการคืนเงิน";
+        title = "💸 Kaew ได้บันทึกการรับเงินคืน";
         descriptionText = `**Kaew** ได้รับเงินคืนจาก **Num** เป็นจำนวน **฿${formattedAmount}**`;
-        color = 0x82ad8a; // Muted green
       }
     } else {
-      // type === "lend"
-      if (creatorName === "Kaew") {
-        title = "🔴 Kaew ได้บันทึกการให้ยืมเงิน";
-        descriptionText = `**Kaew** ให้ **Num** ยืมเงินเป็นจำนวน **฿${formattedAmount}**`;
-        color = 0xc87a68; // Muted terracotta red
+      color = 0xc87a68; // Terracotta / warm debt tone
+      if (creatorName === "Num") {
+        title = "🔴 Num ได้บันทึกการยืมเงิน / แฟนจ่ายให้";
+        descriptionText = `**Num** ยืมเงินจาก **Kaew** เป็นจำนวน **฿${formattedAmount}**`;
       } else {
-        title = "🟢 Num ได้บันทึกการคืนเงิน";
-        descriptionText = `**Num** ได้คืนเงินให้ **Kaew** เป็นจำนวน **฿${formattedAmount}**`;
-        color = 0x82ad8a; // Muted green
+        title = "🔴 Kaew ได้บันทึกการจ่ายให้ / ให้ Num ยืม";
+        descriptionText = `**Kaew** ให้ **Num** ยืมเงินเป็นจำนวน **฿${formattedAmount}**`;
       }
     }
 

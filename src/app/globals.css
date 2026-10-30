@@ -1476,4 +1476,27 @@ code {
   letter-spacing: 0.2px;
 }
 
+/* Payback highlight styles */
+.activity-icon.payback {
+  background: rgba(16, 185, 129, 0.16) !important;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #10b981 !important;
+}
+
+.activity-amount.payback {
+  color: #10b981 !important;
+  font-weight: 800;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+}
+
+.activity-category-badge.payback {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+.activity-card.payback-card {
+  border-left: 3px solid #10b981 !important;
+}
+
 

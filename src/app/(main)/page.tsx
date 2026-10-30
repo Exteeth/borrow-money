@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useRecords, type Record } from "@/hooks/useRecords";
+import { useRecords } from "@/hooks/useRecords";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeTime, formatBaht } from "@/lib/utils";
 import BalanceCircle from "@/components/BalanceCircle";
 import { useToast } from "@/context/ToastContext";
 import CategoryChips from "@/components/CategoryChips";
-import { formatCategoryNote, parseCategoryNote, DEFAULT_CATEGORY_ID } from "@/lib/categories";
+import { formatCategoryNote, parseCategoryNote, DEFAULT_CATEGORY_ID, isPaybackRecord } from "@/lib/categories";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -65,14 +65,18 @@ export default function DashboardPage() {
     if (actionType === "debt") {
       recordType = isKaew ? "lend" : "borrow";
       targetPerson = isKaew ? "Num" : "Kaew";
-      defaultNote = isKaew ? "ให้ Num ยืม" : "ยืมเงินจากแก้ว";
+      defaultNote = isKaew ? "จ่ายให้ Num" : "ยืมเงินจากแก้ว";
     } else {
       recordType = isKaew ? "borrow" : "lend";
       targetPerson = isKaew ? "Num" : "Kaew";
       defaultNote = isKaew ? "ได้รับเงินคืนจาก Num" : "คืนเงินให้แก้ว";
     }
 
-    const finalDescription = formatCategoryNote(selectedCategory, addNote.trim() || defaultNote);
+    const effectiveCategory = actionType === "payback" && selectedCategory === DEFAULT_CATEGORY_ID
+      ? "payback"
+      : selectedCategory;
+
+    const finalDescription = formatCategoryNote(effectiveCategory, addNote.trim() || defaultNote);
 
     try {
       const res = await fetch("/api/records", {
@@ -99,45 +103,13 @@ export default function DashboardPage() {
       setAddAmount("");
       setAddNote("");
       setSelectedCategory(DEFAULT_CATEGORY_ID);
-      addToast(actionType === "debt" ? "บันทึกข้อมูลการยืมสำเร็จ" : "บันทึกข้อมูลการคืนเงินสำเร็จ", "success");
+      addToast(actionType === "debt" ? "บันทึกข้อมูลสำเร็จ" : "บันทึกการคืนเงินสำเร็จ", "success");
     } catch (err: any) {
       console.error(err);
       setAddError("ล้มเหลวในการบันทึกข้อมูล");
       addToast("ล้มเหลวในการบันทึกข้อมูล", "error");
     } finally {
       setAddSaving(false);
-    }
-  };
-
-  const handlePayback = async (record: Record) => {
-    if (!profile || record.currentBalance <= 0) return;
-    try {
-      const res = await fetch(`/api/records/${record.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "payback",
-          prevBalance: record.currentBalance,
-          newBalance: 0,
-          editedBy: profile.id,
-          editedByName: profile.name,
-          note: "จ่ายคืนแล้ว (ทั้งหมด)",
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Update failed");
-      }
-
-      // Refresh records to update balance
-      refetch();
-
-      addToast("บันทึกข้อมูลคืนเงินสำเร็จ", "success");
-      setExpandedRecordId(null);
-    } catch (err: any) {
-      console.error(err);
-      addToast("ล้มเหลวในการบันทึกข้อมูลคืนเงิน", "error");
     }
   };
 
@@ -213,14 +185,14 @@ export default function DashboardPage() {
             onClick={() => handleQuickAdd("debt")} 
             disabled={addSaving || !addAmount}
           >
-            {addSaving ? "กำลังบันทึก..." : myName === "Kaew" ? "ให้ Num ยืม" : "ยืมเงินจากแก้ว"}
+            {addSaving ? "กำลังบันทึก..." : myName === "Kaew" ? "จ่ายให้ Num / ให้ยืม" : "ยืมเงิน / แฟนจ่ายให้"}
           </button>
           <button 
             className="wisdom-submit-btn secondary" 
             onClick={() => handleQuickAdd("payback")} 
             disabled={addSaving || !addAmount}
           >
-            {addSaving ? "กำลังบันทึก..." : myName === "Kaew" ? "ได้รับเงินคืน" : "คืนเงินให้แก้ว"}
+            {addSaving ? "กำลังบันทึก..." : myName === "Kaew" ? "💸 ได้รับเงินคืน" : "💸 คืนเงินแฟน"}
           </button>
         </div>
       </div>
@@ -236,31 +208,44 @@ export default function DashboardPage() {
         {!isLoading && !error && records.length > 0 && (
           <div className="activity-list">
             {records.map(r => {
+              const isPayback = isPaybackRecord(r.description, r.type, r.createdBy);
               const isBorrow = r.type === "borrow";
-              const isPaidOff = r.currentBalance === 0;
               const isExpanded = expandedRecordId === r.id;
               const { category, cleanNote } = parseCategoryNote(r.description);
+              
+              let displayName = "";
+              if (isPayback) {
+                if (profileId.toLowerCase() === "num") {
+                  displayName = r.createdBy?.toLowerCase() === "num" ? "💸 โอนคืนแก้วแล้ว" : "💸 แก้วบันทึกได้รับเงินคืน";
+                } else {
+                  displayName = r.createdBy?.toLowerCase() === "kaew" ? "💸 ได้รับเงินคืนจาก Num" : "💸 Num โอนคืนแล้ว";
+                }
+              } else {
+                if (profileId.toLowerCase() === "num") {
+                  displayName = r.createdBy?.toLowerCase() === "num" ? "ยืมเงินจากแก้ว" : "แก้วจ่ายให้";
+                } else {
+                  displayName = r.createdBy?.toLowerCase() === "kaew" ? "จ่ายให้ Num" : "Num ยืมเงิน";
+                }
+              }
               
               return (
                 <div 
                   key={r.id} 
-                  className={`activity-card glass ${isPaidOff ? "paid-off" : ""}`}
+                  className={`activity-card glass ${isPayback ? "payback-card" : ""}`}
                 >
                   <div 
                     className="activity-card-main-row" 
                     onClick={() => setExpandedRecordId(isExpanded ? null : r.id)}
                   >
                     <div className="activity-left">
-                      <div className={`activity-icon ${isBorrow ? "borrow" : "lend"}`}>
-                        {category.id !== "other" ? category.emoji : (isBorrow ? "↓" : "↑")}
+                      <div className={`activity-icon ${isPayback ? "payback" : (isBorrow ? "borrow" : "lend")}`}>
+                        {isPayback ? "💸" : (category.id !== "other" ? category.emoji : (isBorrow ? "↓" : "↑"))}
                       </div>
                       <div className="activity-info">
                         <div className="activity-title-row">
-                          <span className="activity-name">
-                            {isBorrow ? `${r.personName} (ยืม)` : `${r.personName} (ให้ยืม)`}
-                          </span>
-                          <span className="activity-category-badge">
-                            {category.emoji} {category.shortLabel}
+                          <span className="activity-name">{displayName}</span>
+                          <span className={`activity-category-badge ${isPayback ? "payback" : ""}`}>
+                            {isPayback ? "💸 คืนเงิน" : `${category.emoji} ${category.shortLabel}`}
                           </span>
                         </div>
                         <span className="activity-time">
@@ -270,12 +255,9 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="activity-right">
-                      <span className={`activity-amount ${isBorrow ? "borrow" : "lend"}`}>
-                        {isBorrow ? "-" : "+"}{formatBaht(r.amount)}
+                      <span className={`activity-amount ${isPayback ? "payback" : (isBorrow ? "borrow" : "lend")}`}>
+                        {isPayback ? `+${formatBaht(r.amount)}` : (isBorrow ? `-${formatBaht(r.amount)}` : `+${formatBaht(r.amount)}`)}
                       </span>
-                      {!isPaidOff && r.currentBalance !== r.amount && (
-                        <span className="activity-balance">เหลือ: {formatBaht(r.currentBalance)}</span>
-                      )}
                     </div>
                   </div>
                   
@@ -287,14 +269,6 @@ export default function DashboardPage() {
                       >
                         แก้ไข
                       </button>
-                      {!isPaidOff && (
-                        <button 
-                          className="ac-btn pay" 
-                          onClick={() => handlePayback(r)}
-                        >
-                          จ่ายแล้ว
-                        </button>
-                      )}
                       <button 
                         className="ac-btn delete" 
                         onClick={() => handleDelete(r.id)}

@@ -6,6 +6,7 @@ export interface Category {
 }
 
 export const CATEGORIES: Category[] = [
+  { id: "payback", emoji: "💸", name: "คืนเงิน / เคลียร์ยอด", shortLabel: "คืนเงิน" },
   { id: "food", emoji: "🍜", name: "อาหาร & เครื่องดื่ม", shortLabel: "อาหาร" },
   { id: "transport", emoji: "🚗", name: "เดินทาง & น้ำมัน", shortLabel: "เดินทาง" },
   { id: "shopping", emoji: "🛒", name: "ช้อปปิ้ง & ของใช้", shortLabel: "ช้อปปิ้ง" },
@@ -75,4 +76,26 @@ export function parseCategoryNote(description?: string): {
 
   // If no tag format found, return other and the full text as clean note
   return { category: getCategoryById("other"), cleanNote: raw };
+}
+
+/**
+ * Checks if a record represents a payback / debt settlement
+ */
+export function isPaybackRecord(description?: string, type?: string, _createdBy?: string): boolean {
+  if (!description && !type) return false;
+  const desc = (description || "").toLowerCase();
+  if (
+    desc.includes("คืนเงิน") ||
+    desc.includes("ได้รับเงินคืน") ||
+    desc.includes("💸") ||
+    desc.includes("payback") ||
+    desc.includes("จ่ายคืนแล้ว")
+  ) {
+    return true;
+  }
+  const parsed = parseCategoryNote(description);
+  if (parsed.category.id === "payback") {
+    return true;
+  }
+  return false;
 }
